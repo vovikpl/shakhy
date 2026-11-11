@@ -1,6 +1,29 @@
 package ua.family.shakhy;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.LocationManager;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.nearby.Nearby;
+import com.google.android.gms.nearby.connection.AdvertisingOptions;
+import com.google.android.gms.nearby.connection.ConnectionInfo;
+import com.google.android.gms.nearby.connection.ConnectionLifecycleCallback;
+import com.google.android.gms.nearby.connection.ConnectionResolution;
+import com.google.android.gms.nearby.connection.ConnectionsClient;
+import com.google.android.gms.nearby.connection.DiscoveredEndpointInfo;
+import com.google.android.gms.nearby.connection.DiscoveryOptions;
+import com.google.android.gms.nearby.connection.EndpointDiscoveryCallback;
+import com.google.android.gms.nearby.connection.Payload;
+import com.google.android.gms.nearby.connection.PayloadCallback;
+import com.google.android.gms.nearby.connection.PayloadTransferUpdate;
+import com.google.android.gms.nearby.connection.Strategy;
 import android.content.Context;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -89,6 +112,7 @@ public class MainActivity extends Activity {
         stopHostingInternal();
         stopScanInternal();
         closeConn();
+        nearbyStopAll();
         sender.shutdownNow();
         if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
@@ -301,13 +325,227 @@ public class MainActivity extends Activity {
         return sb.toString();
     }
 
+    // ================= ГРА ПОРУЧ (Google Nearby: Bluetooth + Wi-Fi Direct) =================
+
+    static final String SERVICE_ID = "ua.family.shakhy.chess";
+    static final int PERM_REQ = 77;
+
+    private ConnectionsClient nearby;
+    private volatile String transport = "wifi";
+    private volatile String myName = "Гравець";
+    private volatile String nearbyPeer = null;
+    private volatile boolean nearbyHosting = false;
+    private Runnable pendingAfterPerms = null;
+
+    private ConnectionsClient nc() {
+        if (nearby == null) nearby = Nearby.getConnectionsClient(this);
+        return nearby;
+    }
+
+    private final PayloadCallback payloadCb = new PayloadCallback() {
+        @Override
+        public void onPayloadReceived(String endpointId, Payload payload) {
+            if (payload.getType() != Payload.Type.BYTES) return;
+            byte[] b = payload.asBytes();
+            if (b == null) return;
+            String text = new String(b, UTF8);
+            for (String line : text.split("\n")) {
+                if (line.length() > 0) js("onMessage", line);
+            }
+        }
+
+        @Override
+        public void onPayloadTransferUpdate(String endpointId, PayloadTransferUpdate update) { }
+    };
+
+    private final ConnectionLifecycleCallback lifecycleCb = new ConnectionLifecycleCallback() {
+        @Override
+        public void onConnectionInitiated(String endpointId, ConnectionInfo info) {
+            nc().acceptConnection(endpointId, payloadCb);
+        }
+
+        @Override
+        public void onConnectionResult(String endpointId, ConnectionResolution result) {
+            if (result.getStatus().isSuccess()) {
+                String old = nearbyPeer;
+                if (old != null && !old.equals(endpointId)) nc().disconnectFromEndpoint(old);
+                nearbyPeer = endpointId;
+                if (nearbyHosting) nc().stopAdvertising();
+                nc().stopDiscovery();
+                js("onConnected", endpointId);
+            } else if (!nearbyHosting) {
+                js("onConnectFailed", endpointId);
+            }
+        }
+
+        @Override
+        public void onDisconnected(String endpointId) {
+            if (endpointId.equals(nearbyPeer)) {
+                nearbyPeer = null;
+                js("onDisconnected", "");
+                if (nearbyHosting) startAdvertisingInternal();
+            }
+        }
+    };
+
+    private final EndpointDiscoveryCallback discoveryCb = new EndpointDiscoveryCallback() {
+        @Override
+        public void onEndpointFound(String endpointId, DiscoveredEndpointInfo info) {
+            if (!SERVICE_ID.equals(info.getServiceId())) return;
+            try {
+                JSONObject o = new JSONObject();
+                o.put("name", info.getEndpointName());
+                o.put("ip", endpointId);
+                js("onHostFound", o.toString());
+            } catch (Exception ignored) { }
+        }
+
+        @Override
+        public void onEndpointLost(String endpointId) {
+            js("onHostLost", endpointId);
+        }
+    };
+
+    private void startAdvertisingInternal() {
+        AdvertisingOptions opts = new AdvertisingOptions.Builder().setStrategy(Strategy.P2P_POINT_TO_POINT).build();
+        nc().startAdvertising(myName, SERVICE_ID, lifecycleCb, opts)
+            .addOnSuccessListener(v -> js("onHosting", ""))
+            .addOnFailureListener(e -> {
+                if (nearbyHosting && !isAlreadyRunning(e))
+                    js("onNearbyFail", "Не вдалося створити гру. Перевір, що увімкнено Bluetooth і геолокацію.");
+            });
+    }
+
+    private void startDiscoveryInternal() {
+        DiscoveryOptions opts = new DiscoveryOptions.Builder().setStrategy(Strategy.P2P_POINT_TO_POINT).build();
+        nc().stopDiscovery();
+        nc().startDiscovery(SERVICE_ID, discoveryCb, opts)
+            .addOnFailureListener(e -> {
+                if (!isAlreadyRunning(e))
+                    js("onNearbyFail", "Не вдалося почати пошук. Перевір, що увімкнено Bluetooth і геолокацію.");
+            });
+    }
+
+    private boolean isAlreadyRunning(Exception e) {
+        String m = e == null ? null : e.getMessage();
+        return m != null && (m.contains("ALREADY") || m.contains("8001") || m.contains("8002"));
+    }
+
+    private void nearbyStopAll() {
+        nearbyHosting = false;
+        nearbyPeer = null;
+        if (nearby != null) {
+            nearby.stopAdvertising();
+            nearby.stopDiscovery();
+            nearby.stopAllEndpoints();
+        }
+    }
+
+    // ---------- Дозволи ----------
+    private String[] neededPerms() {
+        List<String> p = new ArrayList<String>();
+        int sdk = Build.VERSION.SDK_INT;
+        p.add("android.permission.ACCESS_FINE_LOCATION");
+        p.add("android.permission.ACCESS_COARSE_LOCATION");
+        if (sdk >= 31) {
+            p.add("android.permission.BLUETOOTH_SCAN");
+            p.add("android.permission.BLUETOOTH_ADVERTISE");
+            p.add("android.permission.BLUETOOTH_CONNECT");
+        }
+        if (sdk >= 33) p.add("android.permission.NEARBY_WIFI_DEVICES");
+        return p.toArray(new String[0]);
+    }
+
+    private boolean has(String perm) {
+        return checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean permsOk() {
+        boolean loc = has("android.permission.ACCESS_FINE_LOCATION") || has("android.permission.ACCESS_COARSE_LOCATION");
+        if (!loc) return false;
+        for (String p : neededPerms()) {
+            if (p.endsWith("_LOCATION")) continue;
+            if (!has(p)) return false;
+        }
+        return true;
+    }
+
+    private void withPerms(final Runnable action) {
+        runOnUiThread(() -> {
+            if (permsOk()) { action.run(); return; }
+            pendingAfterPerms = action;
+            requestPermissions(neededPerms(), PERM_REQ);
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != PERM_REQ) return;
+        Runnable r = pendingAfterPerms;
+        pendingAfterPerms = null;
+        if (permsOk()) { if (r != null) r.run(); }
+        else js("onNearbyDenied", "");
+    }
+
+    /** "" — усе гаразд; "noplay" — немає сервісів Google; "bt" — вимкнено Bluetooth; "loc" — вимкнено геолокацію */
+    private String nearbyCheck() {
+        try {
+            if (GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(this) != ConnectionResult.SUCCESS)
+                return "noplay";
+        } catch (Exception e) { return "noplay"; }
+        try {
+            BluetoothAdapter bt = BluetoothAdapter.getDefaultAdapter();
+            if (bt != null && !bt.isEnabled()) return "bt";
+        } catch (Exception ignored) { }
+        if (Build.VERSION.SDK_INT < 31) {
+            try {
+                LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                if (lm != null) {
+                    boolean on = Build.VERSION.SDK_INT >= 28 ? lm.isLocationEnabled()
+                        : (lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER));
+                    if (!on) return "loc";
+                }
+            } catch (Exception ignored) { }
+        }
+        return "";
+    }
+
     // ---------- Міст для JavaScript ----------
     public class Bridge {
         @JavascriptInterface
+        public void setTransport(String t, String name) {
+            transport = "nearby".equals(t) ? "nearby" : "wifi";
+            myName = (name == null || name.length() == 0) ? "Гравець" : name;
+        }
+
+        @JavascriptInterface
+        public String nearbyCheck() { return MainActivity.this.nearbyCheck(); }
+
+        @JavascriptInterface
+        public void openSettings(final String kind) {
+            runOnUiThread(() -> {
+                try {
+                    Intent i;
+                    if ("bt".equals(kind)) i = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+                    else if ("loc".equals(kind)) i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    else {
+                        i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        i.setData(Uri.parse("package:" + getPackageName()));
+                    }
+                    startActivity(i);
+                } catch (Exception ignored) { }
+            });
+        }
+
+        @JavascriptInterface
         public void host(String name) {
-            stopScanInternal();
-            stopHostingInternal();
-            closeConn();
+            stopAll();
+            if ("nearby".equals(transport)) {
+                if (name != null && name.length() > 0) myName = name;
+                withPerms(() -> { nearbyHosting = true; startAdvertisingInternal(); });
+                return;
+            }
             hostName = name == null ? "" : name;
             final int gen = ++hostGen;
             new Thread(new Runnable() { @Override public void run() { acceptLoop(gen); } }).start();
@@ -316,26 +554,41 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void startScan() {
+            if ("nearby".equals(transport)) {
+                withPerms(() -> startDiscoveryInternal());
+                return;
+            }
             stopScanInternal();
             final int gen = ++scanGen;
             new Thread(new Runnable() { @Override public void run() { scanLoop(gen); } }).start();
         }
 
         @JavascriptInterface
-        public void stopScan() { stopScanInternal(); }
+        public void stopScan() {
+            if ("nearby".equals(transport)) { runOnUiThread(() -> { if (nearby != null) nearby.stopDiscovery(); }); return; }
+            stopScanInternal();
+        }
 
         @JavascriptInterface
-        public void connect(final String ip) {
+        public void connect(final String target) {
+            if ("nearby".equals(transport)) {
+                runOnUiThread(() -> {
+                    nc().stopDiscovery();
+                    nc().requestConnection(myName, target, lifecycleCb)
+                        .addOnFailureListener(e -> js("onConnectFailed", target));
+                });
+                return;
+            }
             stopScanInternal();
             new Thread(new Runnable() {
                 @Override public void run() {
                     Socket s = new Socket();
                     try {
-                        s.connect(new InetSocketAddress(ip, TCP_PORT), 5000);
+                        s.connect(new InetSocketAddress(target, TCP_PORT), 5000);
                         startConnection(s);
                     } catch (Exception e) {
                         try { s.close(); } catch (IOException ignored) { }
-                        js("onConnectFailed", ip);
+                        js("onConnectFailed", target);
                     }
                 }
             }).start();
@@ -343,6 +596,13 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean send(final String line) {
+            if ("nearby".equals(transport)) {
+                final String peer = nearbyPeer;
+                if (peer == null) return false;
+                final byte[] data = (line.replace('\n', ' ') + "\n").getBytes(UTF8);
+                runOnUiThread(() -> nc().sendPayload(peer, Payload.fromBytes(data)));
+                return true;
+            }
             if (out == null || sender.isShutdown()) return false;
             sender.execute(new Runnable() {
                 @Override public void run() {
@@ -362,16 +622,34 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void disconnect() { closeConn(); }
+        public void disconnect() {
+            if ("nearby".equals(transport)) {
+                runOnUiThread(() -> {
+                    String peer = nearbyPeer;
+                    nearbyPeer = null;
+                    if (peer != null) nc().disconnectFromEndpoint(peer);
+                    if (nearbyHosting) startAdvertisingInternal();
+                });
+                return;
+            }
+            closeConn();
+        }
 
         @JavascriptInterface
-        public void stopHosting() { stopHostingInternal(); }
+        public void stopHosting() {
+            if ("nearby".equals(transport)) {
+                runOnUiThread(() -> { nearbyHosting = false; if (nearby != null) nearby.stopAdvertising(); });
+                return;
+            }
+            stopHostingInternal();
+        }
 
         @JavascriptInterface
         public void stopAll() {
             stopHostingInternal();
             stopScanInternal();
             closeConn();
+            runOnUiThread(() -> nearbyStopAll());
         }
 
         @JavascriptInterface

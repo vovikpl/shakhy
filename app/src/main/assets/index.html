@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Шахи</title>
+<title>Ігри вдвох</title>
 <style>
 :root{
   --felt:#1e3b2f; --felt-2:#26493a; --felt-3:#2f5a47;
@@ -118,6 +118,42 @@ details summary{padding:6px 2px}
 #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);opacity:0;background:#0f1f18;color:var(--ink);
   padding:11px 16px;border-radius:12px;font-size:15px;transition:.25s;pointer-events:none;z-index:20;max-width:90vw;text-align:center}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.gamesel{width:100%;max-width:340px}
+.bannerSlot{display:contents}
+/* Морський бій */
+#bsgame{padding:10px 8px;justify-content:flex-start}
+.bsbody{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.gw-big{--gw:min(94vw,47vh)}
+.gw-mid{--gw:min(94vw,56vh)}
+.gw-small{--gw:min(56vw,22vh)}
+.bshead{width:var(--gw);display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:600}
+.bshead small{font-weight:400;color:var(--muted);font-size:13px}
+.bsgrid{width:var(--gw);display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
+.bsgrid .lb{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:calc(var(--gw) / 11 * .4);color:var(--muted)}
+.bsgrid .c{aspect-ratio:1;border-radius:3px;background:#cfe5ee;position:relative;display:flex;align-items:center;justify-content:center;
+  font-size:calc(var(--gw) / 11 * .62);font-weight:900;line-height:1}
+.bsgrid.turn{outline:3px solid var(--brass);outline-offset:3px;border-radius:4px}
+.c.ship{background:#456a80}
+.c.ship.sel{background:var(--brass)}
+.c.miss::after,.c.halo::after{content:"";width:24%;height:24%;border-radius:50%;background:#4a7186}
+.c.halo::after{opacity:.4}
+.c.hit{background:#f2b6a9;color:#c0392b}
+.c.hit::after{content:"✕"}
+.c.ship.hit{background:#e0533d;color:#fff}
+.c.sunk{background:#7a281c;color:#f4c4b8}
+.c.sunk::after{content:"✕"}
+.c.reveal{background:#456a80;opacity:.75}
+.c.pend{background:var(--brass);animation:pl .5s infinite alternate}
+@keyframes pl{to{opacity:.4}}
+#bsStatus{font-size:17px;font-weight:600;text-align:center;min-height:24px}
+#bsStatus.good{color:#ffd77a}#bsStatus.bad{color:#ffb4a8}
+.bsnote{font-size:14px;color:var(--muted);text-align:center;min-height:18px;margin-top:-4px}
+.tray{width:var(--gw);display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.tray button{padding:8px 10px;border-radius:10px;background:var(--felt-2);display:flex;align-items:center;gap:7px;font-size:14px;border:2px solid var(--felt-3)}
+.tray button.on{background:var(--brass);color:#2a1d08;border-color:var(--brass)}
+.tray button:disabled{opacity:.3}
+.blk{display:inline-flex;gap:2px}.blk i{display:block;width:9px;height:14px;border-radius:2px;background:currentColor}
+.bsgame-actions{width:var(--gw)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -125,15 +161,29 @@ details summary{padding:6px 2px}
 
 <!-- МЕНЮ -->
 <section id="menu" class="screen on">
-  <div class="hero"><span class="knight">♞</span><h1>Шахи</h1></div>
+  <div class="hero"><span class="knight" id="heroIc">♞</span><h1 id="heroTitle">Шахи</h1></div>
+  <div class="seg gamesel" id="gameSeg">
+    <button data-g="chess" class="on">♞ Шахи</button>
+    <button data-g="bs">⚓ Морський бій</button>
+  </div>
   <div class="field">
     <label for="name">Як тебе звати?</label>
     <input id="name" maxlength="16" autocomplete="off" placeholder="Ім'я">
   </div>
-  <button class="big primary" id="bHost"><span class="ic">📶</span><span><b>Створити гру</b><small>Інший телефон приєднається по Wi-Fi</small></span></button>
-  <button class="big" id="bJoin"><span class="ic">🔍</span><span><b>Приєднатися до гри</b><small>Знайти гру на іншому телефоні</small></span></button>
-  <button class="big" id="bLocal"><span class="ic">📱</span><span><b>Грати вдвох на цьому телефоні</b><small>Передавайте телефон по черзі</small></span></button>
-  <p class="note">Для гри по Wi-Fi обидва телефони мають бути підключені до однієї мережі. Інтернет не потрібен.</p>
+  <button class="big primary" id="bNear"><span class="ic">🤝</span><span><b>Грати з другом поруч</b><small>Через Bluetooth, без Wi-Fi та інтернету</small></span></button>
+  <button class="big" id="bWifi"><span class="ic">📶</span><span><b>Грати по Wi-Fi</b><small>Обидва телефони в одній мережі</small></span></button>
+  <button class="big" id="bLocal"><span class="ic" id="localIc">📱</span><span><b id="localTitle">Грати вдвох на цьому телефоні</b><small id="localSub">Передавайте телефон по черзі</small></span></button>
+</section>
+
+<!-- ВИБІР: СТВОРИТИ ЧИ ПРИЄДНАТИСЯ -->
+<section id="pick" class="screen">
+  <div class="panel">
+    <h2 id="pickTitle">Гра з другом поруч</h2>
+    <p class="ip" id="pickNote" style="margin:0"></p>
+    <button class="big primary" id="bHost"><span class="ic">♔</span><span><b>Створити гру</b><small>Друг приєднається до тебе</small></span></button>
+    <button class="big" id="bJoin"><span class="ic">🔍</span><span><b>Приєднатися до гри</b><small>Знайти гру на телефоні друга</small></span></button>
+    <button class="btn ghost" id="pickBack">Назад</button>
+  </div>
 </section>
 
 <!-- СТВОРЕННЯ ГРИ -->
@@ -141,7 +191,7 @@ details summary{padding:6px 2px}
   <div class="panel">
     <h2>Нова гра</h2>
     <div>
-      <div class="ip" style="margin:0 0 6px 4px">Я граю за</div>
+      <div class="ip" style="margin:0 0 6px 4px" id="segLabel">Я граю за</div>
       <div class="seg" id="colorSeg">
         <button data-c="w" class="on">⚪ Білих</button>
         <button data-c="b">⚫ Чорних</button>
@@ -149,7 +199,8 @@ details summary{padding:6px 2px}
       </div>
     </div>
     <div class="wait"><div class="spin"></div><div>Чекаю на суперника…<br><span class="ip">Попроси його натиснути «Приєднатися до гри»</span></div></div>
-    <div class="ip">Адреса цього телефона: <b id="hostIp">—</b><br>Знадобиться, якщо інший телефон не знайде гру сам.</div>
+    <div class="ip" id="hostIpBox">Адреса цього телефона: <b id="hostIp">—</b><br>Знадобиться, якщо інший телефон не знайде гру сам.</div>
+    <div class="ip" id="hostNearBox">Тримайте телефони поруч, на відстані кількох метрів.</div>
     <button class="btn ghost" id="hostCancel">Скасувати</button>
   </div>
 </section>
@@ -158,10 +209,10 @@ details summary{padding:6px 2px}
 <section id="join" class="screen">
   <div class="panel">
     <h2>Пошук ігор</h2>
-    <div class="wait"><div class="spin"></div><div id="joinState">Шукаю ігри в цій мережі…</div></div>
+    <div class="wait"><div class="spin"></div><div id="joinState">Шукаю ігри…</div></div>
     <div class="found" id="found"></div>
-    <div class="hint" id="joinHint">Гри поки не видно. Перевір, що на іншому телефоні відкрито «Створити гру» і обидва телефони в одній Wi-Fi мережі. Гостьові мережі роутера часто не пускають телефони один до одного.</div>
-    <details>
+    <div class="hint" id="joinHint"></div>
+    <details id="manualBox">
       <summary>Ввести адресу вручну</summary>
       <div class="row" style="margin-top:8px">
         <input id="manualIp" inputmode="decimal" placeholder="192.168.1.23">
@@ -178,9 +229,15 @@ details summary{padding:6px 2px}
   <div id="board"></div>
   <div class="player" id="pBot"></div>
   <div id="status"></div>
-  <div id="banner"><span id="bannerText"></span></div>
+  <div class="bannerSlot"><div id="banner"><span id="bannerText"></span></div></div>
   <div id="moves"></div>
   <div class="actions" id="actions"></div>
+</section>
+
+<!-- МОРСЬКИЙ БІЙ -->
+<section id="bsgame" class="screen">
+  <div class="bannerSlot"></div>
+  <div id="bsBody" class="bsbody"></div>
 </section>
 
 <div id="modal"><div class="card" id="card"></div></div>
@@ -448,6 +505,7 @@ class Chess {
 <script>
 // ---------- Міст до Android (у браузері — заглушка для перевірки) ----------
 const NET = (typeof Android !== 'undefined') ? Android : {
+  setTransport(){}, nearbyCheck(){ return ''; }, openSettings(){},
   host(){}, startScan(){}, stopScan(){}, connect(){ setTimeout(() => onConnectFailed(''), 400); },
   send(){ return false; }, disconnect(){}, stopHosting(){}, stopAll(){}, myIps(){ return ''; },
   vibrate(){}, exit(){}
@@ -464,8 +522,10 @@ const S = {
   mode: null, role: null, myColor: 'w', myName: 'Гравець', oppName: 'Суперник',
   game: null, legal: [], selected: null, flip: false, over: null,
   connected: false, lastRecv: 0, lastHostIp: null, hostChoice: 'w',
-  rematchAsked: false, screen: 'menu', modalKind: null
+  rematchAsked: false, screen: 'menu', modalKind: null,
+  transport: 'wifi', lastHostName: null, autoJoin: null, gameType: 'chess'
 };
+const inGame = () => S.screen === 'game' || S.screen === 'bsgame';
 
 // ---------- Екрани ----------
 function show(id){
@@ -501,13 +561,74 @@ function saveName(){
 $('bLocal').onclick = () => {
   saveName();
   Object.assign(S, { mode:'local', role:null, flip:false, connected:false });
-  newGame(); show('game'); render();
+  if (S.gameType === 'bs') { bsNew('me'); enterGame(); return; }
+  newGame(); enterGame();
 };
-$('bHost').onclick = () => {
+function setGameType(g){
+  S.gameType = g === 'bs' ? 'bs' : 'chess';
+  try { localStorage.setItem('igry_game', S.gameType); } catch(e) {}
+  const bs = S.gameType === 'bs';
+  document.querySelectorAll('#gameSeg button').forEach(x => x.classList.toggle('on', x.dataset.g === S.gameType));
+  $('heroIc').textContent = bs ? '⚓' : '♞';
+  $('heroTitle').textContent = bs ? 'Морський бій' : 'Шахи';
+  $('localIc').textContent = bs ? '🤖' : '📱';
+  $('localTitle').textContent = bs ? 'Грати з комп’ютером' : 'Грати вдвох на цьому телефоні';
+  $('localSub').textContent = bs ? 'Якщо друга немає поруч' : 'Передавайте телефон по черзі';
+}
+$('gameSeg').onclick = e => { const b = e.target.closest('button'); if (b) setGameType(b.dataset.g); };
+try { setGameType(localStorage.getItem('igry_game') || 'chess'); } catch(e) {}
+$('bNear').onclick = () => openPick('nearby');
+$('bWifi').onclick = () => openPick('wifi');
+$('pickBack').onclick = () => show('menu');
+function openPick(t){
   saveName();
+  S.transport = t;
+  const gname = S.gameType === 'bs' ? 'Морський бій' : 'Шахи';
+  $('pickTitle').textContent = gname + (t === 'nearby' ? ': з другом поруч' : ': по Wi-Fi');
+  $('pickNote').textContent = t === 'nearby'
+    ? 'Увімкніть Bluetooth на обох телефонах. Один створює гру, другий приєднується.'
+    : 'Обидва телефони мають бути в одній Wi-Fi мережі. Інтернет не потрібен.';
+  show('pick');
+}
+// Перевірка перед грою поруч: сервіси Google, Bluetooth, геолокація
+function nearbyReady(){
+  if (S.transport !== 'nearby') return true;
+  const c = NET.nearbyCheck();
+  if (!c) return true;
+  if (c === 'noplay') ask('np', 'Не працює на цьому телефоні', 'Для гри поруч потрібні сервіси Google Play, а їх тут немає. Спробуйте «Грати по Wi-Fi» або точку доступу.', [{ label:'Зрозуміло', cls:'gold' }]);
+  else if (c === 'bt') ask('np', 'Увімкни Bluetooth', 'Без Bluetooth телефони не знайдуть один одного.', [
+    { label:'Відкрити налаштування', cls:'gold', fn: () => NET.openSettings('bt') }, { label:'Скасувати' }]);
+  else if (c === 'loc') ask('np', 'Увімкни геолокацію', 'На цьому телефоні Android шукає пристрої поруч тільки з увімкненою геолокацією.', [
+    { label:'Відкрити налаштування', cls:'gold', fn: () => NET.openSettings('loc') }, { label:'Скасувати' }]);
+  return false;
+}
+function onNearbyDenied(){
+  show('pick');
+  ask('perm', 'Потрібен дозвіл', 'Щоб знайти телефон друга поруч, Android просить дозвіл на пристрої поблизу (на старих телефонах — на геолокацію). Гра не стежить за місцем, це вимога Bluetooth-пошуку.', [
+    { label:'Відкрити налаштування', cls:'gold', fn: () => NET.openSettings('app') }, { label:'Скасувати' }]);
+}
+function onNearbyFail(msg){
+  if (S.screen === 'host' || S.screen === 'join') {
+    NET.stopAll(); show('pick');
+    ask('fail', 'Не вийшло', esc(msg), [{ label:'Зрозуміло', cls:'gold' }]);
+  } else if (inGame()) {
+    setBanner(msg, 'Ще раз', reconnect);
+  }
+}
+$('bHost').onclick = () => {
+  if (!nearbyReady()) return;
   Object.assign(S, { mode:'net', role:'host', connected:false, game:null, over:null });
-  $('hostIp').textContent = NET.myIps() || '—';
-  show('host'); NET.host(S.myName);
+  const near = S.transport === 'nearby';
+  $('hostIpBox').style.display = near ? 'none' : '';
+  $('hostNearBox').style.display = near ? '' : 'none';
+  $('hostIp').textContent = near ? '' : (NET.myIps() || '—');
+  const bs = S.gameType === 'bs';
+  $('segLabel').textContent = bs ? 'Першим стріляє' : 'Я граю за';
+  const lb = bs ? ['🙋 Я', '🧒 Друг', '🎲 Навмання'] : ['⚪ Білих', '⚫ Чорних', '🎲 Навмання'];
+  document.querySelectorAll('#colorSeg button').forEach((x, k) => x.textContent = lb[k]);
+  const label = S.myName + '|' + S.gameType;
+  NET.setTransport(S.transport, label);
+  show('host'); NET.host(label);
 };
 $('colorSeg').onclick = e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -518,13 +639,19 @@ $('hostCancel').onclick = toMenu;
 
 let found = {}, hintTimer = null;
 $('bJoin').onclick = () => {
-  saveName();
-  Object.assign(S, { mode:'net', role:'client', connected:false, game:null, over:null });
+  if (!nearbyReady()) return;
+  Object.assign(S, { mode:'net', role:'client', connected:false, game:null, over:null, autoJoin:null });
+  NET.setTransport(S.transport, S.myName);
   startSearch();
 };
 function startSearch(){
   found = {}; renderFound();
-  $('joinState').textContent = 'Шукаю ігри в цій мережі…';
+  const near = S.transport === 'nearby';
+  $('joinState').textContent = near ? 'Шукаю ігри поруч…' : 'Шукаю ігри в цій мережі…';
+  $('manualBox').style.display = near ? 'none' : '';
+  $('joinHint').textContent = near
+    ? 'Гри поки не видно. Перевір, що на телефоні друга відкрито «Створити гру», на обох увімкнено Bluetooth і телефони лежать поруч.'
+    : 'Гри поки не видно. Перевір, що на іншому телефоні відкрито «Створити гру» і обидва телефони в одній Wi-Fi мережі. Гостьові мережі роутера часто не пускають телефони один до одного.';
   $('joinHint').classList.remove('on');
   clearTimeout(hintTimer); hintTimer = setTimeout(() => $('joinHint').classList.add('on'), 8000);
   show('join'); NET.startScan();
@@ -532,10 +659,14 @@ function startSearch(){
 function renderFound(){
   const list = Object.values(found);
   $('found').innerHTML = list.map(h =>
-    `<button data-ip="${esc(h.ip)}">♞ ${esc(h.name)}<small>${esc(h.ip)}</small></button>`).join('');
+    `<button data-ip="${esc(h.ip)}">${h.game === 'bs' ? '⚓' : '♞'} ${esc(h.name)}<small>${h.game === 'bs' ? 'морський бій' : 'шахи'}${S.transport === 'wifi' ? '<br>' + esc(h.ip) : ''}</small></button>`).join('');
   if (list.length) $('joinHint').classList.remove('on');
 }
-$('found').onclick = e => { const b = e.target.closest('button'); if (b) joinIp(b.dataset.ip); };
+$('found').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const h = found[b.dataset.ip]; if (h) S.lastHostName = h.name + '|' + h.game;
+  joinIp(b.dataset.ip);
+};
 $('manualGo').onclick = () => {
   const ip = $('manualIp').value.trim();
   if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) { toast('Адреса має виглядати так: 192.168.1.23'); return; }
@@ -548,6 +679,7 @@ function joinIp(ip){
 }
 $('joinCancel').onclick = toMenu;
 setInterval(() => {
+  if (S.transport !== 'wifi') return;
   const now = Date.now(); let ch = false;
   for (const k in found) if (now - found[k].seen > 4500) { delete found[k]; ch = true; }
   if (ch && S.screen === 'join') renderFound();
@@ -561,6 +693,7 @@ function toMenu(){
   const token = ++leaveToken;
   setTimeout(() => { if (token === leaveToken && S.mode === null) NET.disconnect(); }, 300);
   Object.assign(S, { mode:null, role:null, connected:false, game:null, over:null, selected:null });
+  B = null; clearTimeout(aiTimer);
   closeModal(); $('banner').classList.remove('on');
   show('menu');
 }
@@ -571,41 +704,59 @@ function onHostFound(json){
   try {
     const o = JSON.parse(json);
     const fresh = !found[o.ip];
-    found[o.ip] = { name: cleanName(o.name) || 'Гра', ip: o.ip, seen: Date.now() };
+    const parts = String(o.name || '').split('|');
+    found[o.ip] = { name: cleanName(parts[0]) || 'Гра', game: parts[1] === 'bs' ? 'bs' : 'chess', ip: o.ip, seen: Date.now() };
+    if (S.autoJoin && found[o.ip].name + '|' + found[o.ip].game === S.autoJoin) {
+      S.autoJoin = null; NET.stopScan(); setBanner('Підключаюсь…'); NET.connect(o.ip); return;
+    }
     if (fresh && S.screen === 'join') renderFound();
   } catch(e) {}
 }
+function onHostLost(id){ if (found[id]) { delete found[id]; if (S.screen === 'join') renderFound(); } }
 function onNetError(msg){ toast(msg); }
+let lastFail = 0;
 function onConnectFailed(){
+  if (Date.now() - lastFail < 1500) return;
+  lastFail = Date.now();
   if (S.screen === 'join') {
     toast('Не вдалося підключитися. Перевір мережу й спробуй ще.');
-    $('joinState').textContent = 'Шукаю ігри в цій мережі…';
-    NET.startScan();
-  } else if (S.screen === 'game') {
-    setBanner('Не вдалося підключитися. Обидва телефони в одній Wi-Fi мережі?', 'Ще раз', reconnect);
+    startSearch();
+  } else if (inGame()) {
+    setBanner(S.transport === 'nearby' ? 'Не вдалося підключитися. Телефони поруч, Bluetooth увімкнено?'
+                                       : 'Не вдалося підключитися. Обидва телефони в одній Wi-Fi мережі?', 'Ще раз', reconnect);
   }
 }
 function onConnected(addr){
   S.connected = true; S.lastRecv = Date.now();
   if (S.role === 'client') S.lastHostIp = addr;
+  S.autoJoin = null;
   clearTimeout(hintTimer);
   $('banner').classList.remove('on');
   send({ t:'hello', name:S.myName, v:1 });
-  if (S.screen === 'game') render();
+  if (inGame()) render();
 }
 function onDisconnected(){ lost(); }
 function lost(){
   if (!S.connected) return;
   S.connected = false;
-  if (S.screen === 'game') {
+  if (inGame()) {
     if (S.role === 'host') setBanner('Суперник відключився. Чекаю, поки повернеться…');
     else setBanner('Зв\'язок з суперником втрачено.', 'Підключитися знову', reconnect);
     render();
   } else if (S.screen === 'join') {
-    $('joinState').textContent = 'Шукаю ігри в цій мережі…'; NET.startScan();
+    startSearch();
   }
 }
 function reconnect(){
+  if (S.transport === 'nearby') {
+    // Після обриву в друга буде нова «адреса», тому шукаємо його гру за іменем
+    if (!S.lastHostName) return;
+    S.autoJoin = S.lastHostName;
+    setBanner('Шукаю гру друга поруч…', 'Скасувати', () => { S.autoJoin = null; NET.stopScan();
+      setBanner('Зв\'язок з суперником втрачено.', 'Підключитися знову', reconnect); });
+    NET.startScan();
+    return;
+  }
   if (!S.lastHostIp) return;
   setBanner('Підключаюсь…');
   NET.connect(S.lastHostIp);
@@ -629,32 +780,37 @@ setInterval(() => {
 function onMessage(line){
   S.lastRecv = Date.now();
   let m; try { m = JSON.parse(line); } catch(e) { return; }
+  if (typeof m.t === 'string' && m.t.indexOf('bs_') === 0) { bsMsg(m); return; }
   switch (m.t) {
     case 'ping': send({ t:'pong' }); break;
     case 'hello':
       S.oppName = cleanName(m.name) || 'Суперник';
       if (S.role === 'host') {
-        if (S.game && S.screen === 'game') { sendState(); toast(`${S.oppName} повернувся в гру`); render(); }
+        if (hasGame() && inGame()) { sendState(); toast(`${S.oppName} повернувся в гру`); render(); }
         else startNetGame();
-      } else if (S.screen === 'game') render();
+      } else if (inGame()) render();
       break;
     case 'start':
-      S.myColor = m.hostColor === 'w' ? 'b' : 'w';
       if (m.name) S.oppName = cleanName(m.name);
+      S.gameType = m.game === 'bs' ? 'bs' : 'chess';
+      if (S.gameType === 'bs') { bsNew(m.first, m.round); enterGame(); break; }
+      S.myColor = m.hostColor === 'w' ? 'b' : 'w';
       newGame(); enterGame();
       break;
     case 'state': {
+      if (m.game === 'bs') { if (m.name) S.oppName = cleanName(m.name); S.gameType = 'bs'; bsOnState(m); break; }
+      S.gameType = 'chess';
       S.myColor = m.hostColor === 'w' ? 'b' : 'w';
       if (m.name) S.oppName = cleanName(m.name);
       const g = new Chess();
       for (const u of (m.moves || [])) if (!g.playUci(u)) break;
-      const wasInGame = S.screen === 'game' && S.game;
+      const wasInGame = inGame() && S.game;
       S.game = g; S.legal = g.legal(); S.over = m.over || null; S.selected = null; S.rematchAsked = false;
       enterGame();
       if (wasInGame) toast('Зв\'язок відновлено');
       break;
     }
-    case 'needState': if (S.role === 'host' && S.game) sendState(); break;
+    case 'needState': if (S.role === 'host' && hasGame()) sendState(); break;
     case 'move': {
       const g = S.game;
       if (!g || S.over) return;
@@ -665,6 +821,7 @@ function onMessage(line){
       break;
     }
     case 'resign':
+      if (S.gameType === 'bs') { if (B && !B.over) bsFinish(true, 'resign'); break; }
       if (!S.over) finish(S.myColor === 'w' ? '1-0' : '0-1', 'resign');
       break;
     case 'drawOffer':
@@ -689,7 +846,7 @@ function onMessage(line){
     case 'undoNo': toast('Суперник не дозволив скасувати хід'); break;
     case 'rematch':
       if (S.rematchAsked) { newRound(); return; }
-      ask('rematch', 'Ще партію?', `${esc(S.oppName)} хоче зіграти ще. Кольори поміняються.`, [
+      ask('rematch', 'Ще партію?', `${esc(S.oppName)} хоче зіграти ще. ` + (S.gameType === 'bs' ? 'Першим стрілятиме інший гравець.' : 'Кольори поміняються.'), [
         { label:'Грати!', cls:'gold', fn: () => { send({ t:'rematchAccept' }); newRound(); } },
         { label:'Ні, дякую', fn: () => send({ t:'rematchNo' }) }
       ]);
@@ -704,17 +861,31 @@ function onMessage(line){
   }
 }
 function resync(){ if (S.role === 'host') sendState(); else send({ t:'needState' }); }
-function sendState(){ send({ t:'state', hostColor:S.myColor, moves:S.game.uci, over:S.over, name:S.myName }); }
+function sendState(){
+  if (S.gameType === 'bs') { bsSendState(); return; }
+  send({ t:'state', game:'chess', hostColor:S.myColor, moves:S.game.uci, over:S.over, name:S.myName });
+}
+function hasGame(){ return S.gameType === 'bs' ? !!B : !!S.game; }
 
 function startNetGame(){
+  if (S.gameType === 'bs') {
+    const first = S.hostChoice === 'r' ? (Math.random() < .5 ? 'host' : 'client') : (S.hostChoice === 'w' ? 'host' : 'client');
+    bsNew(first);
+    send({ t:'start', game:'bs', first, round:B.round, name:S.myName });
+    enterGame();
+    return;
+  }
   S.myColor = S.hostChoice === 'r' ? (Math.random() < .5 ? 'w' : 'b') : S.hostChoice;
   newGame();
-  send({ t:'start', hostColor:S.myColor, name:S.myName });
+  send({ t:'start', game:'chess', hostColor:S.myColor, name:S.myName });
   enterGame();
 }
 function enterGame(){
-  closeModal(); $('banner').classList.remove('on');
-  show('game'); render();
+  closeModal();
+  const scr = S.gameType === 'bs' ? 'bsgame' : 'game';
+  $(scr).querySelector('.bannerSlot').appendChild($('banner'));
+  $('banner').classList.remove('on');
+  show(scr); render();
 }
 
 // ---------- Партія ----------
@@ -723,6 +894,7 @@ function newGame(){
   S.over = null; S.selected = null; S.rematchAsked = false;
 }
 function newRound(){
+  if (S.gameType === 'bs') { bsNewRound(); return; }
   if (S.mode === 'net') S.myColor = S.myColor === 'w' ? 'b' : 'w';
   newGame(); closeModal(); render();
   toast(S.mode === 'net' ? (S.myColor === 'w' ? 'Нова партія. Ти граєш білими' : 'Нова партія. Ти граєш чорними') : 'Нова партія');
@@ -848,14 +1020,17 @@ function act(id){
   }
 }
 function confirmLeave(){
-  if (S.over || !S.game || !S.game.uci.length) return toMenu();
+  if (S.gameType === 'bs') {
+    if (!B || B.over || (!B.ready && !B.outgoing.length)) return toMenu();
+  } else if (S.over || !S.game || !S.game.uci.length) return toMenu();
   ask('leave', 'Вийти з партії?', S.mode === 'net' ? 'Суперник побачить, що ти вийшов.' : 'Поточна партія закінчиться.', [
     { label:'Вийти', cls:'gold', fn: toMenu }, { label:'Залишитися' }]);
 }
 $('actions').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !b.disabled) act(b.dataset.a); });
 
 // ---------- Малювання ----------
-function render(){
+function render(){ if (S.gameType === 'bs') bsRender(); else renderChess(); }
+function renderChess(){
   const g = S.game; if (!g) return;
   const flip = S.mode === 'net' ? S.myColor === 'b' : S.flip;
   const last = g.hist.length ? g.hist[g.hist.length - 1].m : null;
@@ -938,11 +1113,401 @@ function capturedBy(g){
   return res;
 }
 
+// =================== МОРСЬКИЙ БІЙ ===================
+// Класичні правила: поле 10×10; кораблі 1×4, 2×3, 3×2, 4×1; кораблі не торкаються навіть кутами;
+// влучив — стріляєш ще; навколо потопленого корабля клітинки позначаються автоматично.
+const FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
+const LETTERS = 'АБВГДЕЖЗИК';
+let B = null, aiTimer = null;
+
+function around(i){
+  const r = (i / 10) | 0, c = i % 10, res = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (!dr && !dc) continue;
+    const r2 = r + dr, c2 = c + dc;
+    if (r2 >= 0 && r2 < 10 && c2 >= 0 && c2 < 10) res.push(r2 * 10 + c2);
+  }
+  return res;
+}
+function shipCells(i, size, vert){
+  const r = (i / 10) | 0, c = i % 10;
+  if (vert ? r + size > 10 : c + size > 10) return null;
+  return Array.from({ length: size }, (_, k) => vert ? i + 10 * k : i + k);
+}
+function canPlace(fleet, cells){
+  const block = new Set();
+  for (const sh of fleet) for (const c of sh) { block.add(c); for (const n of around(c)) block.add(n); }
+  return cells.every(c => !block.has(c));
+}
+function randomFleet(){
+  for (;;) {
+    const fl = []; let ok = true;
+    for (const size of FLEET) {
+      let placed = false;
+      for (let t = 0; t < 300 && !placed; t++) {
+        const cells = shipCells(Math.floor(Math.random() * 100), size, Math.random() < .5);
+        if (cells && canPlace(fl, cells)) { fl.push(cells); placed = true; }
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) return fl;
+  }
+}
+// Результат пострілу по флоту з урахуванням попередніх пострілів
+function resolveShot(fleet, prevShots, i){
+  if (prevShots.some(s => s.i === i)) return { i, r: 'miss' };
+  const ship = fleet.find(sh => sh.includes(i));
+  if (!ship) return { i, r: 'miss' };
+  const hits = new Set(prevShots.filter(s => s.r !== 'miss').map(s => s.i)); hits.add(i);
+  if (ship.every(c => hits.has(c))) return { i, r: 'sunk', cells: ship.slice() };
+  return { i, r: 'hit' };
+}
+const missCount = list => list.filter(s => s.r === 'miss').length;
+const sunkCount = list => list.filter(s => s.r === 'sunk').length;
+
+function bsNew(first, round){
+  clearTimeout(aiTimer);
+  B = {
+    round: round || Math.random().toString(36).slice(2, 10),
+    first,                      // хто стріляє першим: 'host' | 'client' | 'me' | 'ai'
+    fleet: [], sel: 4, vert: false, selShip: -1,
+    ready: false, oppReady: S.mode === 'local',
+    incoming: [],               // постріли по моєму полю (я знаю результат напевно)
+    outgoing: [],               // мої постріли з відповідями суперника
+    pending: null, over: null, oppFleet: null, note: '', noteCls: '',
+    ai: S.mode === 'local' ? randomFleet() : null
+  };
+  S.rematchAsked = false;
+}
+function bsMe(){ return S.mode === 'local' ? 'me' : S.role; }
+function bsPhase(){ return (B.ready && B.oppReady) ? 'play' : 'place'; }
+// Черга визначається з історії: хто першим, той стріляє, поки промахів у обох порівну
+function bsMyTurn(){
+  const mm = missCount(B.outgoing), mo = missCount(B.incoming);
+  return B.first === bsMe() ? mm === mo : mo > mm;
+}
+function bsCanShoot(){
+  return B && !B.over && bsPhase() === 'play' && bsMyTurn() && !B.pending && !S.modalKind &&
+    (S.mode === 'local' || S.connected);
+}
+function oppView(){
+  const v = new Array(100).fill('');
+  for (const s of B.outgoing) if (s.r === 'miss') v[s.i] = 'miss'; else if (s.r === 'hit') v[s.i] = 'hit';
+  for (const s of B.outgoing) if (s.r === 'sunk') {
+    for (const c of s.cells) v[c] = 'sunk';
+    for (const c of s.cells) for (const n of around(c)) if (!v[n]) v[n] = 'halo';
+  }
+  if (B.oppFleet) for (const sh of B.oppFleet) for (const c of sh) if (!v[c]) v[c] = 'reveal';
+  if (B.pending) v[B.pending.i] = 'pend';
+  return v;
+}
+function myView(){
+  const v = new Array(100).fill('');
+  for (const sh of B.fleet) for (const c of sh) v[c] = 'ship';
+  for (const s of B.incoming) {
+    if (s.r === 'miss') v[s.i] = 'miss';
+    else if (s.r === 'hit') v[s.i] = 'ship hit';
+  }
+  for (const s of B.incoming) if (s.r === 'sunk') {
+    for (const c of s.cells) v[c] = 'sunk';
+    for (const c of s.cells) for (const n of around(c)) if (!v[n]) v[n] = 'halo';
+  }
+  return v;
+}
+function shipsLeft(fleet, shots){
+  const hits = new Set(shots.filter(s => s.r !== 'miss').map(s => s.i));
+  return fleet.filter(sh => !sh.every(c => hits.has(c))).length;
+}
+
+// ---------- Розстановка ----------
+function remaining(){
+  const left = {};
+  for (const s of FLEET) left[s] = (left[s] || 0) + 1;
+  for (const sh of B.fleet) left[sh.length]--;
+  return left;
+}
+function nextSize(){
+  const left = remaining();
+  for (const s of [4, 3, 2, 1]) if (left[s] > 0) return s;
+  return 0;
+}
+function placeAt(i){
+  const own = B.fleet.findIndex(sh => sh.includes(i));
+  if (own >= 0) {                       // натиснули на свій корабель — знімаємо його
+    const sh = B.fleet.splice(own, 1)[0];
+    B.sel = sh.length; B.vert = sh.length > 1 && sh[1] - sh[0] === 10;
+    bsRender(); return;
+  }
+  const size = B.sel || nextSize();
+  if (!size) return;
+  if (remaining()[size] <= 0) { B.sel = nextSize(); return bsRender(); }
+  // Біля краю зсуваємо корабель, щоб він вмістився
+  const r = (i / 10) | 0, c = i % 10;
+  const start = B.vert ? Math.min(r, 10 - size) * 10 + c : r * 10 + Math.min(c, 10 - size);
+  const cells = shipCells(start, size, B.vert);
+  if (!cells || !canPlace(B.fleet, cells)) { toast('Тут не можна: кораблі не можуть торкатися навіть кутами'); return; }
+  B.fleet.push(cells);
+  B.sel = remaining()[size] > 0 ? size : nextSize();
+  bsRender();
+}
+function bsReady(){
+  if (B.fleet.length !== FLEET.length) return;
+  B.ready = true;
+  if (S.mode === 'net') send({ t:'bs_ready', round:B.round });
+  B.note = ''; bsAfter();
+}
+
+// ---------- Постріли ----------
+function bsShoot(i){
+  if (!bsCanShoot()) return;
+  if (oppView()[i]) return;
+  if (S.mode === 'local') {
+    const res = resolveShot(B.ai, B.outgoing, i);
+    B.outgoing.push(res); noteMine(res); bsAfter(); return;
+  }
+  B.pending = { i, n: B.outgoing.length };
+  send({ t:'bs_shot', i, n: B.outgoing.length, round:B.round });
+  bsRender();
+}
+function noteMine(res){
+  B.note = res.r === 'miss' ? 'Мимо' : res.r === 'hit' ? 'Влучання! Стріляй ще' : 'Корабель потоплено! Стріляй ще';
+  B.noteCls = res.r === 'miss' ? '' : 'good';
+}
+function noteTheirs(res){
+  const who = S.mode === 'local' ? 'Комп’ютер' : S.oppName;
+  B.note = res.r === 'miss' ? `${who} промахнувся` : res.r === 'hit' ? `${who} влучив у твій корабель` : `${who} потопив твій корабель`;
+  B.noteCls = res.r === 'miss' ? '' : 'bad';
+}
+function bsAfter(){
+  bsCheckOver();
+  bsRender();
+  if (S.mode === 'local' && !B.over && bsPhase() === 'play' && !bsMyTurn()) {
+    clearTimeout(aiTimer); aiTimer = setTimeout(aiShoot, 900);
+  }
+}
+function bsCheckOver(){
+  if (B.over || bsPhase() !== 'play') return;
+  if (shipsLeft(B.fleet, B.incoming) === 0) bsFinish(false, 'sunk');
+  else if (sunkCount(B.outgoing) >= FLEET.length) bsFinish(true, 'sunk');
+}
+function bsFinish(win, reason){
+  if (B.over) return;
+  B.over = { win, reason };
+  B.pending = null; clearTimeout(aiTimer);
+  if (S.mode === 'local') B.oppFleet = B.ai;
+  else send({ t:'bs_reveal', fleet:B.fleet, round:B.round });
+  NET.vibrate(300);
+  bsRender();
+  setTimeout(bsShowResult, 600);
+}
+function bsResultInfo(){
+  const o = B.over, local = S.mode === 'local';
+  if (o.win) return { title: 'Перемога! 🏆',
+    why: o.reason === 'resign' ? `${esc(S.oppName)} здається.` : (local ? 'Усі кораблі комп’ютера потоплено.' : 'Усі кораблі суперника потоплено.') };
+  return { title: local ? 'Комп’ютер переміг' : 'Цього разу поразка',
+    why: o.reason === 'resign' ? 'Партію здано.' : 'Усі твої кораблі потоплено.' };
+}
+function bsShowResult(){
+  if (!B || !B.over || S.modalKind) return;
+  const r = bsResultInfo();
+  ask('result', r.title, r.why, [
+    { label:'Ще раз', cls:'gold', fn: rematch },
+    { label:'Подивитися поле' },
+    { label:'В меню', fn: toMenu }
+  ]);
+}
+function bsNewRound(){
+  const swap = { host:'client', client:'host', me:'me' };
+  const first = swap[B ? B.first : 'me'] || 'me';
+  bsNew(first, B ? B.round + 'r' : undefined);
+  closeModal(); bsRender();
+  if (S.mode === 'net') toast(first === S.role ? 'Новий бій. Ти стріляєш першим' : 'Новий бій. Першим стріляє ' + S.oppName);
+  else toast('Новий бій');
+}
+
+// ---------- Комп'ютер ----------
+function aiShoot(){
+  if (!B || B.over || S.mode !== 'local' || bsMyTurn()) return;
+  const shot = new Set(B.incoming.map(s => s.i));
+  const blocked = new Set();
+  const sunkCells = new Set();
+  for (const s of B.incoming) if (s.r === 'sunk') for (const c of s.cells) { sunkCells.add(c); for (const n of around(c)) blocked.add(n); }
+  const open = i => i >= 0 && i < 100 && !shot.has(i) && !blocked.has(i);
+  const hits = B.incoming.filter(s => s.r === 'hit' && !sunkCells.has(s.i)).map(s => s.i);
+  let cands = [];
+  if (hits.length >= 2) {
+    const sameRow = hits.every(h => ((h / 10) | 0) === ((hits[0] / 10) | 0));
+    const sorted = hits.slice().sort((a, b) => a - b);
+    const lo = sorted[0], hi = sorted[sorted.length - 1];
+    if (sameRow) { if (lo % 10 > 0) cands.push(lo - 1); if (hi % 10 < 9) cands.push(hi + 1); }
+    else { cands.push(lo - 10, hi + 10); }
+  } else if (hits.length === 1) {
+    const h = hits[0];
+    if (h % 10 > 0) cands.push(h - 1);
+    if (h % 10 < 9) cands.push(h + 1);
+    cands.push(h - 10, h + 10);
+  }
+  cands = cands.filter(open);
+  if (!cands.length) for (let i = 0; i < 100; i++) if (open(i)) cands.push(i);
+  if (!cands.length) return;
+  const i = cands[Math.floor(Math.random() * cands.length)];
+  const res = resolveShot(B.fleet, B.incoming, i);
+  B.incoming.push(res); noteTheirs(res);
+  if (res.r !== 'miss') NET.vibrate(res.r === 'sunk' ? 200 : 60);
+  bsAfter();
+}
+
+// ---------- Мережа ----------
+function bsSendState(){
+  send({ t:'state', game:'bs', round:B.round, first:B.first, incoming:B.incoming, ready:B.ready,
+         over: B.over ? { win: !B.over.win, reason: B.over.reason } : null, name:S.myName });
+}
+function bsOnState(m){
+  if (!B || B.round !== m.round) {
+    // Цей телефон не пам'ятає цього бою (наприклад, гру перезапустили) — починаємо новий
+    send({ t:'bs_lost' });
+    return;
+  }
+  bsApplySync(m.incoming, m.ready, m.over);
+  send({ t:'bs_sync', round:B.round, incoming:B.incoming, ready:B.ready,
+         over: B.over ? { win: !B.over.win, reason: B.over.reason } : null });
+  const was = inGame();
+  enterGame();
+  if (was) toast('Зв’язок відновлено');
+}
+function bsApplySync(incoming, ready, over){
+  B.outgoing = (incoming || []).map(s => ({ i:s.i, r:s.r, cells:s.cells }));
+  B.oppReady = !!ready;
+  B.pending = null;
+  if (over && !B.over) { B.over = over; }
+  bsCheckOver();
+}
+function bsMsg(m){
+  if (!B) return;
+  if (m.t === 'bs_lost') { if (S.role === 'host') { toast('Починаємо новий бій'); startNetGame(); } return; }
+  if (m.round && m.round !== B.round) { if (m.t !== 'bs_reveal') bsResync(); return; }
+  switch (m.t) {
+    case 'bs_ready':
+      if (!B.oppReady) { B.oppReady = true; if (!B.ready) toast(`${S.oppName} вже розставив кораблі`); }
+      bsAfter();
+      break;
+    case 'bs_shot': {
+      if (m.n < B.incoming.length) { send({ t:'bs_res', round:B.round, n:m.n, ...B.incoming[m.n] }); return; }
+      if (m.n > B.incoming.length || bsPhase() !== 'play' || bsMyTurn() || B.over) { bsResync(); return; }
+      const res = resolveShot(B.fleet, B.incoming, m.i);
+      B.incoming.push(res);
+      send({ t:'bs_res', round:B.round, n:m.n, ...res });
+      noteTheirs(res);
+      NET.vibrate(res.r === 'miss' ? 30 : res.r === 'sunk' ? 220 : 90);
+      bsAfter();
+      break;
+    }
+    case 'bs_res':
+      if (m.n < B.outgoing.length) return;
+      if (m.n > B.outgoing.length) { bsResync(); return; }
+      B.outgoing.push({ i:m.i, r:m.r, cells:m.cells });
+      B.pending = null; noteMine(m); bsAfter();
+      break;
+    case 'bs_sync':
+      bsApplySync(m.incoming, m.ready, m.over); bsRender();
+      break;
+    case 'bs_reveal':
+      B.oppFleet = m.fleet; bsRender();
+      break;
+  }
+}
+function bsResync(){ if (S.role === 'host') bsSendState(); else send({ t:'needState' }); }
+
+// ---------- Малювання ----------
+function gridHtml(view, who, clickable, extra){
+  let h = `<div class="bsgrid ${extra || ''}" data-g="${who}"><div class="lb"></div>`;
+  for (let c = 0; c < 10; c++) h += `<div class="lb">${LETTERS[c]}</div>`;
+  for (let r = 0; r < 10; r++) {
+    h += `<div class="lb">${r + 1}</div>`;
+    for (let c = 0; c < 10; c++) {
+      const i = r * 10 + c;
+      h += `<div class="c ${view[i]}"${clickable ? ` data-c="${i}"` : ''}></div>`;
+    }
+  }
+  return h + '</div>';
+}
+function bsRender(){
+  if (!B) return;
+  const el = $('bsBody'); let h = '';
+  const phase = bsPhase();
+  const opp = S.mode === 'local' ? 'Комп’ютер' : S.oppName;
+
+  if (phase === 'place' && !B.ready) {
+    const left = remaining();
+    h += `<div class="gw-mid bshead"><span>Розстав свої кораблі</span><small>${B.fleet.length} з ${FLEET.length}</small></div>`;
+    h += `<div class="bsnote">Вибери корабель і торкнись клітинки. Торкнись корабля на полі, щоб прибрати.</div>`;
+    h += `<div class="gw-mid">${gridHtml(myView(), 'me', true)}</div>`;
+    h += '<div class="gw-mid tray">';
+    for (const s of [4, 3, 2, 1]) {
+      h += `<button data-s="${s}" class="${B.sel === s && left[s] > 0 ? 'on' : ''}" ${left[s] > 0 ? '' : 'disabled'}>` +
+           `<span class="blk">${'<i></i>'.repeat(s)}</span>×${left[s]}</button>`;
+    }
+    h += `<button data-rot="1">${B.vert ? '↕ Вертикально' : '↔ Горизонтально'}</button></div>`;
+    if (S.mode === 'net' && B.oppReady) h += `<div class="bsnote">${esc(opp)} вже готовий до бою</div>`;
+    h += actionsHtml([['random', '🎲', 'Випадково'], ['clear', '🧹', 'Очистити', false, !B.fleet.length],
+                      ['ready', '⚓', 'До бою!', true, B.fleet.length !== FLEET.length], ['menu', '☰', 'Меню']], 'gw-mid');
+  } else {
+    const my = bsMyTurn();
+    let st, cls = '';
+    if (B.over) { st = bsResultInfo().title; cls = B.over.win ? 'good' : 'bad'; }
+    else if (phase === 'place') st = `Чекаю, поки ${opp} розставить кораблі…`;
+    else if (S.mode === 'net' && !S.connected) st = 'Немає зв’язку';
+    else if (my) st = B.pending ? 'Постріл…' : 'Твій постріл! Обери клітинку';
+    else st = S.mode === 'local' ? 'Стріляє комп’ютер…' : `Стріляє ${opp}…`;
+    if (my && phase === 'play' && !B.over) cls = 'good';
+    h += `<div id="bsStatus" class="${cls}">${esc(st)}</div>`;
+    h += `<div class="bsnote ${B.noteCls}">${esc(B.note || '')}</div>`;
+    h += `<div class="gw-big bshead"><span>Флот: ${esc(opp)}</span><small>кораблів залишилось: ${FLEET.length - sunkCount(B.outgoing)}</small></div>`;
+    h += `<div class="gw-big">${gridHtml(oppView(), 'opp', true, my && phase === 'play' && !B.over ? 'turn' : '')}</div>`;
+    h += `<div class="gw-small bshead"><span>Мій флот</span><small>${shipsLeft(B.fleet, B.incoming)} з ${FLEET.length}</small></div>`;
+    h += `<div class="gw-small">${gridHtml(myView(), 'me', false)}</div>`;
+    const acts = B.over
+      ? [['again', S.rematchAsked ? '⏳' : '🔁', S.rematchAsked ? 'Чекаю…' : 'Ще раз', true], ['result', '🏁', 'Результат'], ['menu', '☰', 'Меню']]
+      : [['resign', '🏳️', 'Здатися', false, phase !== 'play' || (S.mode === 'net' && !S.connected)], ['menu', '☰', 'Меню']];
+    h += actionsHtml(acts, 'gw-big');
+  }
+  el.innerHTML = h;
+}
+function actionsHtml(a, gw){
+  return `<div class="${gw} actions bsgame-actions" style="width:var(--gw)">` + a.map(([id, ic, lb, gold, dis]) =>
+    `<button data-a="${id}" class="${gold ? 'gold' : ''}" ${dis ? 'disabled' : ''}><span>${ic}</span>${lb}</button>`).join('') + '</div>';
+}
+$('bsBody').addEventListener('click', e => {
+  if (!B) return;
+  const a = e.target.closest('[data-a]');
+  if (a) { if (!a.disabled) bsAct(a.dataset.a); return; }
+  const s = e.target.closest('[data-s]');
+  if (s) { if (!s.disabled) { B.sel = +s.dataset.s; bsRender(); } return; }
+  if (e.target.closest('[data-rot]')) { B.vert = !B.vert; bsRender(); return; }
+  const cell = e.target.closest('[data-c]');
+  if (!cell) return;
+  const g = cell.parentElement.dataset.g, i = +cell.dataset.c;
+  if (g === 'me' && bsPhase() === 'place' && !B.ready) placeAt(i);
+  else if (g === 'opp') bsShoot(i);
+});
+function bsAct(id){
+  if (id === 'menu') return confirmLeave();
+  if (id === 'random') { B.fleet = randomFleet(); B.sel = 0; return bsRender(); }
+  if (id === 'clear') { B.fleet = []; B.sel = 4; return bsRender(); }
+  if (id === 'ready') return bsReady();
+  if (id === 'again') return rematch();
+  if (id === 'result') return bsShowResult();
+  if (id === 'resign') return ask('resign', 'Здатися?', 'Точно здати бій?', [
+    { label:'Так, здаюся', cls:'gold', fn: () => { if (S.mode === 'net') send({ t:'resign' }); bsFinish(false, 'resign'); } },
+    { label:'Ні, граю далі' }]);
+}
+
 // ---------- Кнопка «Назад» на телефоні ----------
 function onBack(){
   if (S.modalKind) { if (S.modalKind === 'promo') { S.selected = null; render(); } closeModal(); return; }
-  if (S.screen === 'game') return confirmLeave();
+  if (inGame()) return confirmLeave();
   if (S.screen === 'host' || S.screen === 'join') return toMenu();
+  if (S.screen === 'pick') return show('menu');
   NET.exit();
 }
 </script>

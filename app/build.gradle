@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId 'ua.family.shakhy'
-        minSdk 21
+        minSdk 23
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 3
+        versionName '1.2'
     }
 
     // Постійний ключ підпису: нові версії ставляться поверх старих без видалення
@@ -41,4 +41,8 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+}
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-nearby:19.3.0'
 }
