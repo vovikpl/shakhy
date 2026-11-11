@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'ua.family.shakhy'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'ua.family.shakhy'
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    // Постійний ключ підпису: нові версії ставляться поверх старих без видалення
+    signingConfigs {
+        family {
+            storeFile file('shakhy.keystore')
+            storePassword 'shakhy123'
+            keyAlias 'shakhy'
+            keyPassword 'shakhy123'
+        }
+    }
+
+    buildTypes {
+        debug { signingConfig signingConfigs.family }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.family
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
