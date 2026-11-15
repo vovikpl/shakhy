@@ -1,4 +1,4 @@
-name: Зібрати APK
+name: Зібрати APK і AAB
 
 on:
   push:
@@ -21,23 +21,21 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.13'
 
-      - name: Збірка
-        run: gradle assembleRelease --no-daemon
+      - name: Збірка (APK для телефонів, AAB для Google Play)
+        run: gradle assembleRelease bundleRelease --no-daemon
 
-      - name: Підготувати файл
-        run: cp app/build/outputs/apk/release/app-release.apk Shakhy.apk
-
-      - name: Зберегти APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shakhy-apk
-          path: Shakhy.apk
+      - name: Підготувати файли
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk PairPlay.apk
+          cp app/build/outputs/bundle/release/app-release.aab PairPlay-GooglePlay.aab
 
       - name: Опублікувати у Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Шахи, збірка ${{ github.run_number }}
-          files: Shakhy.apk
+          name: Pair Play, збірка ${{ github.run_number }}
+          files: |
+            PairPlay.apk
+            PairPlay-GooglePlay.aab
