@@ -670,6 +670,9 @@ public class MainActivity extends Activity {
         public String myIps() { return ipList(); }
 
         @JavascriptInterface
+        public boolean canSpeak() { return tts != null && ttsReady; }
+
+        @JavascriptInterface
         public void speak(final String text) {
             runOnUiThread(() -> {
                 if (tts != null && ttsReady && text != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "word");

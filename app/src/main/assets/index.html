@@ -186,6 +186,46 @@ details summary{padding:6px 2px}
 .opts button i{position:absolute;top:-8px;right:6px;font-style:normal;font-size:11px;background:var(--brass);color:#2a1d08;border-radius:8px;padding:1px 6px}
 .opts button i + i{right:auto;left:6px;background:#cfe5ee}
 .ennote{min-height:22px;font-size:16px;font-weight:600;text-align:center}
+.dots{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.dots i{width:12px;height:12px;border-radius:50%;background:var(--felt-3)}
+.dots i.g{background:#62c47f}.dots i.r{background:#d06a5f}.dots i.c{background:var(--brass)}
+.bigspk{width:110px;height:110px;border-radius:50%;background:#e8dcc2;font-size:54px;margin:4px auto 6px;display:block;box-shadow:0 4px 0 #cbb98f}
+.bigspk:active{transform:translateY(3px);box-shadow:0 1px 0 #cbb98f}
+.opts.emo button{font-size:46px;min-height:88px}
+.opts.n3{grid-template-columns:1fr 1fr 1fr}
+.opts.n3:not(.emo) button{font-size:16px}
+.slots{display:flex;justify-content:center;gap:5px;margin-top:12px;flex-wrap:wrap}
+.slots span{width:30px;height:38px;border-bottom:3px solid #9aa79f;font-size:26px;font-weight:700;display:flex;align-items:flex-end;justify-content:center;text-transform:lowercase}
+.slots span.f{border-color:#3f9a5b;color:#2b6e40}
+.tiles{width:100%;display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.tiles button{width:50px;height:54px;border-radius:12px;background:var(--brass);color:#2a1d08;font-size:26px;font-weight:700;box-shadow:0 4px 0 #a97c25}
+.tiles button.used{visibility:hidden}
+.tiles button.bad{background:#d06a5f;animation:shk .3s}
+.tiles button.hint{box-shadow:0 0 0 4px #fff,0 4px 0 #a97c25;animation:pl .5s infinite alternate}
+@keyframes shk{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#enquest{padding:10px 10px 30px;justify-content:flex-start}
+.eqbody{width:100%;max-width:440px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.eqtop{width:100%;display:flex;gap:6px;align-items:center;position:sticky;top:0;z-index:2;background:var(--felt);padding:4px 0}
+.chip{padding:8px 11px;border-radius:20px;background:var(--felt-2);border:2px solid var(--felt-3);font-size:14px;font-weight:600;white-space:nowrap}
+.eqtop .chip:first-child{margin-right:auto}
+.parrot{width:100%;display:flex;gap:10px;align-items:center;background:#f4ecdc;color:#2a2a2a;border-radius:16px;padding:10px 12px}
+.parrot span{font-size:40px}.parrot p{margin:0;font-size:15px;line-height:1.4}
+.review{width:100%;padding:12px;border-radius:14px;background:#3a2f1a;color:#f3dfb2;font-weight:600}
+.qmap{width:100%;display:flex;flex-direction:column;gap:14px;padding:8px 0;position:relative;
+  background:repeating-linear-gradient(180deg,transparent 0 10px,rgba(230,180,80,.35) 10px 18px) center/4px 100% no-repeat}
+.qnode{display:flex;align-items:center;gap:10px;width:74%;padding:10px 12px;border-radius:40px;background:var(--felt-2);border:3px solid var(--felt-3);text-align:left;position:relative}
+.qnode.l{align-self:flex-start}.qnode.r{align-self:flex-end;flex-direction:row-reverse;text-align:right}
+.qnode .qic{font-size:34px;width:52px;height:52px;border-radius:50%;background:#2a5d7a;display:flex;align-items:center;justify-content:center;flex:none}
+.qnode.boss .qic{background:#5a2b2b}
+.qnode .qtx b{display:block;font-size:15px}.qnode .qtx small{color:var(--brass);font-size:14px;letter-spacing:1px}
+.qnode.locked{opacity:.45}
+.qnode.next{border-color:var(--brass);animation:glow 1.2s infinite alternate}
+@keyframes glow{to{box-shadow:0 0 16px rgba(230,180,80,.8)}}
+.album{width:100%;text-align:center}.album h2{margin:4px 0 8px}
+.alv{text-align:left;font-weight:600;margin:12px 4px 6px}
+.agrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.agrid span{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--felt-2);border-radius:12px}
+.agrid span.lock{opacity:.4;font-size:20px}
 /* Танчики */
 #tkgame{padding:8px 6px;justify-content:flex-start;gap:8px}
 .tkbar{width:min(96vw,58vh);display:flex;align-items:center;gap:8px;background:var(--felt-2);border-radius:12px;padding:6px 10px;font-size:15px}
@@ -294,6 +334,11 @@ details summary{padding:6px 2px}
 <section id="engame" class="screen">
   <div class="bannerSlot"></div>
   <div id="enBody" class="enbody"></div>
+</section>
+
+<!-- КВЕСТ -->
+<section id="enquest" class="screen">
+  <div id="eqBody" class="eqbody"></div>
 </section>
 
 <!-- ТАНЧИКИ -->
@@ -575,7 +620,7 @@ class Chess {
 <script>
 // ---------- Міст до Android (у браузері — заглушка для перевірки) ----------
 const NET = (typeof Android !== 'undefined') ? Android : {
-  setTransport(){}, nearbyCheck(){ return ''; }, openSettings(){}, speak(){},
+  setTransport(){}, nearbyCheck(){ return ''; }, openSettings(){}, speak(){}, canSpeak(){ return false; },
   host(){}, startScan(){}, stopScan(){}, connect(){ setTimeout(() => onConnectFailed(''), 400); },
   send(){ return false; }, disconnect(){}, stopHosting(){}, stopAll(){}, myIps(){ return ''; },
   vibrate(){}, exit(){}
@@ -632,7 +677,7 @@ $('bLocal').onclick = () => {
   saveName();
   Object.assign(S, { mode:'local', role:null, flip:false, connected:false });
   if (S.gameType === 'bs') { bsNew('me'); enterGame(); return; }
-  if (S.gameType === 'en') { EN.startLocal(); return; }
+  if (S.gameType === 'en') { EQ.open(); return; }
   if (S.gameType === 'tk') { TK.startLocal(); return; }
   newGame(); enterGame();
 };
@@ -643,8 +688,8 @@ const GAMES = {
   bs:    { ic:'⚓', name:'Морський бій', screen:'bsgame', local:['🤖', 'Грати з комп’ютером', 'Якщо друга немає поруч'],
            opt:{ label:'Першим стріляє', list:[['w','🙋 Я'], ['b','🧒 Друг'], ['r','🎲 Навмання']] },
            again:'Першим стрілятиме інший гравець.' },
-  en:    { ic:'🇬🇧', name:'Англійська', screen:'engame', local:['🎓', 'Тренування самому', '10 слів на швидкість'],
-           opt:{ label:'Тема слів', list:[['all','🎲 Усе'], ['animals','🐾 Тварини'], ['food','🍎 Їжа'], ['colors','🎨 Кольори й числа'], ['things','🏠 Речі']] },
+  en:    { ic:'🇬🇧', name:'Англійська', screen:'engame', local:['🏝️', 'Квест: Острів скарбів', 'Карта, наліпки, 3 рівні складності'],
+           opt:{ label:'Рівень слів', list:[['own','🎯 Кожен свій'], ['1','🐣 5–7 років'], ['2','🧒 8–10 років'], ['3','🧑‍🎓 11+ років']] },
            again:'Будуть нові слова.' },
   tk:    { ic:'🎯', name:'Танчики', screen:'tkgame', local:['🤖', 'Грати з комп’ютером', 'Танк проти бота'],
            opt:{ label:'Бій до', list:[['3','3 перемог'], ['5','5 перемог'], ['10','10 перемог']] },
@@ -1615,105 +1660,212 @@ function bsAct(id){
     { label:'Ні, граю далі' }]);
 }
 
-// =================== АНГЛІЙСЬКА: ДУЕЛЬ ===================
-// Обом показується те саме слово; хто перший обрав правильний переклад — отримує бал.
-// Головний телефон (той, хто створив гру) вирішує, хто був першим.
-const WORDS = {
-  animals: [['🐶','dog','собака'],['🐱','cat','кіт'],['🐭','mouse','миша'],['🐰','rabbit','кролик'],['🦊','fox','лисиця'],
-    ['🐻','bear','ведмідь'],['🦁','lion','лев'],['🐯','tiger','тигр'],['🐮','cow','корова'],['🐷','pig','свиня'],
-    ['🐸','frog','жаба'],['🐵','monkey','мавпа'],['🐔','chicken','курка'],['🐦','bird','птах'],['🐟','fish','риба'],
-    ['🐴','horse','кінь'],['🐘','elephant','слон'],['🐍','snake','змія'],['🐢','turtle','черепаха'],['🦉','owl','сова'],
-    ['🐺','wolf','вовк'],['🐑','sheep','вівця'],['🦆','duck','качка'],['🐝','bee','бджола'],['🦋','butterfly','метелик']],
-  food: [['🍎','apple','яблуко'],['🍌','banana','банан'],['🍞','bread','хліб'],['🧀','cheese','сир'],['🥛','milk','молоко'],
-    ['🥚','egg','яйце'],['🎂','cake','торт'],['🍕','pizza','піца'],['🥕','carrot','морква'],['🍅','tomato','помідор'],
-    ['🍇','grapes','виноград'],['🍊','orange','апельсин'],['🍓','strawberry','полуниця'],['🍦','ice cream','морозиво'],
-    ['💧','water','вода'],['🧃','juice','сік'],['🥔','potato','картопля'],['🍒','cherry','вишня'],['🍋','lemon','лимон'],
-    ['🍬','candy','цукерка'],['🍲','soup','суп'],['🥒','cucumber','огірок']],
-  colors: [['🔴','red','червоний'],['🔵','blue','синій'],['🟢','green','зелений'],['🟡','yellow','жовтий'],
-    ['🟣','purple','фіолетовий'],['⚫','black','чорний'],['⚪','white','білий'],['🟤','brown','коричневий'],
-    ['1️⃣','one','один'],['2️⃣','two','два'],['3️⃣','three','три'],['4️⃣','four','чотири'],['5️⃣','five','п’ять'],
-    ['6️⃣','six','шість'],['7️⃣','seven','сім'],['8️⃣','eight','вісім'],['9️⃣','nine','дев’ять'],['🔟','ten','десять']],
-  things: [['🏠','house','будинок'],['🚗','car','машина'],['🚌','bus','автобус'],['🚆','train','потяг'],['✈️','plane','літак'],
-    ['🚲','bike','велосипед'],['⚽','ball','м’яч'],['📖','book','книга'],['🖊️','pen','ручка'],['🏫','school','школа'],
-    ['🛏️','bed','ліжко'],['🪑','chair','стілець'],['🚪','door','двері'],['☀️','sun','сонце'],['🌙','moon','місяць'],
-    ['⭐','star','зірка'],['🌳','tree','дерево'],['🌸','flower','квітка'],['🌧️','rain','дощ'],['❄️','snow','сніг'],
-    ['📱','phone','телефон'],['⏰','clock','годинник']]
+// =================== СЛОВНИК: 3 рівні, 27 тем ===================
+const EN_LVL = {
+  1: { ic:'🐣', name:'Малюк',   age:'5–7 років',  opts:3 },
+  2: { ic:'🧒', name:'Школяр',  age:'8–10 років', opts:4 },
+  3: { ic:'🧑‍🎓', name:'Знавець', age:'11+ років',  opts:4 }
 };
+const TOPICS = {};
+function topic(id, lvl, ic, n, story, data){
+  TOPICS[id] = { id, lvl, ic, n, story, w: data.split(';').map(x => { const [e, en, ua] = x.split('|'); return { e, en, ua, t: id }; }) };
+}
+// ----- Рівень 1 -----
+topic('animals1', 1, '🐾', 'Острів Звірів', 'Тут живуть звірята. Назви їх англійською — і вони покажуть дорогу!',
+ '🐶|dog|собака;🐱|cat|кіт;🐭|mouse|миша;🐰|rabbit|кролик;🐻|bear|ведмідь;🦁|lion|лев;🐮|cow|корова;🐷|pig|свиня;🐸|frog|жаба;🐵|monkey|мавпа;🐔|hen|курка;🐦|bird|птах;🐟|fish|риба;🐴|horse|кінь;🐘|elephant|слон;🦆|duck|качка;🐑|sheep|вівця;🦊|fox|лисиця');
+topic('food1', 1, '🍎', 'Смачна Бухта', 'Пірати сховали карту в кошику з їжею. Знайди всі смаколики!',
+ '🍎|apple|яблуко;🍌|banana|банан;🍞|bread|хліб;🧀|cheese|сир;🥛|milk|молоко;🥚|egg|яйце;🎂|cake|торт;🍕|pizza|піца;🥕|carrot|морква;🍅|tomato|помідор;🍊|orange|апельсин;🍓|strawberry|полуниця;🍦|ice cream|морозиво;💧|water|вода;🧃|juice|сік;🍬|candy|цукерка;🍋|lemon|лимон;🥔|potato|картопля');
+topic('colors', 1, '🎨', 'Веселкова Скеля', 'Скеля сяє всіма кольорами. Назви кожен колір!',
+ '🔴|red|червоний;🔵|blue|синій;🟢|green|зелений;🟡|yellow|жовтий;🟠|orange|помаранчевий;🟣|purple|фіолетовий;⚫|black|чорний;⚪|white|білий;🟤|brown|коричневий;💗|pink|рожевий;🌫️|grey|сірий');
+topic('numbers1', 1, '🔢', 'Лічильний Маяк', 'Маяк відкриється, якщо порахуєш англійською до десяти!',
+ '1️⃣|one|один;2️⃣|two|два;3️⃣|three|три;4️⃣|four|чотири;5️⃣|five|п’ять;6️⃣|six|шість;7️⃣|seven|сім;8️⃣|eight|вісім;9️⃣|nine|дев’ять;🔟|ten|десять');
+topic('family', 1, '👪', 'Хатинка Родини', 'Тут живе велика родина. Познайомся з усіма!',
+ '👩|mother|мама;👨|father|тато;👧|sister|сестра;👦|brother|брат;👶|baby|немовля;👵|grandma|бабуся;👴|grandpa|дідусь;👪|family|сім’я;🧒|child|дитина;👫|friend|друг');
+topic('toys', 1, '🧸', 'Печера Іграшок', 'У печері повно іграшок. Назви їх, щоб вийти назовні!',
+ '⚽|ball|м’яч;🧸|teddy bear|ведмедик;🪆|doll|лялька;🪁|kite|повітряний змій;🎈|balloon|повітряна кулька;🤖|robot|робот;🚂|train|потяг;🥁|drum|барабан;🎮|game|гра;🧩|puzzle|пазл;🚗|car|машина;🎲|dice|кубик');
+topic('body', 1, '🖐️', 'Острів Велетня', 'Сонний велетень прокинеться, якщо назвеш частини тіла!',
+ '👁️|eye|око;👂|ear|вухо;👃|nose|ніс;👄|mouth|рот;✋|hand|долоня;💪|arm|рука;🦶|foot|стопа;🦵|leg|нога;🦷|tooth|зуб;🙂|face|обличчя;💇|hair|волосся;👅|tongue|язик;👤|head|голова');
+topic('nature1', 1, '🌳', 'Чарівний Ліс', 'У лісі все говорить англійською. Послухай природу!',
+ '☀️|sun|сонце;🌙|moon|місяць;⭐|star|зірка;🌳|tree|дерево;🌸|flower|квітка;🌧️|rain|дощ;❄️|snow|сніг;☁️|cloud|хмара;🌊|sea|море;🌈|rainbow|веселка;🔥|fire|вогонь;🍃|leaf|листок');
+topic('home1', 1, '🏠', 'Будиночок Капітана', 'Капітан загубив ключ від скрині. Обшукай його будиночок!',
+ '🏠|house|будинок;🛏️|bed|ліжко;🚪|door|двері;🪟|window|вікно;🪑|chair|стілець;☕|cup|чашка;🥄|spoon|ложка;💡|lamp|лампа;🛁|bath|ванна;🔑|key|ключ;🕰️|clock|годинник;📺|TV|телевізор');
+// ----- Рівень 2 -----
+topic('animals2', 2, '🦒', 'Дикі Джунглі', 'У джунглях і в морі живуть дивовижні тварини. Хто тут хто?',
+ '🦈|shark|акула;🐳|whale|кит;🐬|dolphin|дельфін;🐙|octopus|восьминіг;🦀|crab|краб;🐧|penguin|пінгвін;🦒|giraffe|жирафа;🦓|zebra|зебра;🦘|kangaroo|кенгуру;🐪|camel|верблюд;🐐|goat|коза;🦜|parrot|папуга;🕷️|spider|павук;🐜|ant|мураха;🐌|snail|равлик;🐯|tiger|тигр;🐺|wolf|вовк;🦉|owl|сова;🐍|snake|змія;🐢|turtle|черепаха;🦋|butterfly|метелик;🐝|bee|бджола');
+topic('food2', 2, '🍝', 'Таверна Кока', 'Кок приготував бенкет. Розберись у меню!',
+ '🍝|pasta|макарони;🥪|sandwich|бутерброд;🍚|rice|рис;🥗|salad|салат;🍲|soup|суп;🍖|meat|м’ясо;🌭|sausage|сосиска;🍵|tea|чай;☕|coffee|кава;🧂|salt|сіль;🍯|honey|мед;🧈|butter|масло;🍫|chocolate|шоколад;🍪|cookie|печиво;🍐|pear|груша;🍑|peach|персик;🍉|watermelon|кавун;🍍|pineapple|ананас;🌽|corn|кукурудза;🍄|mushroom|гриб;🍇|grapes|виноград;🥒|cucumber|огірок;🍒|cherry|вишня');
+topic('clothes', 2, '👕', 'Скриня з Одягом', 'Пірати розкидали одяг. Склади все назад!',
+ '👕|shirt|сорочка;👗|dress|сукня;🧢|cap|кепка;🎩|hat|капелюх;👟|sneakers|кросівки;👞|shoes|туфлі;🧦|socks|шкарпетки;🧥|coat|пальто;🧤|gloves|рукавички;🧣|scarf|шарф;👖|jeans|джинси;👢|boots|чоботи;👓|glasses|окуляри;🩳|shorts|шорти;👔|tie|краватка');
+topic('school', 2, '🏫', 'Піратська Школа', 'Навіть пірати ходять до школи! Збери шкільне приладдя.',
+ '🏫|school|школа;📖|book|книга;🖊️|pen|ручка;✏️|pencil|олівець;📏|ruler|лінійка;🎒|backpack|рюкзак;👩‍🏫|teacher|вчитель;🧑‍🎓|student|учень;✂️|scissors|ножиці;🎨|paints|фарби;💻|computer|комп’ютер;📝|homework|домашнє завдання;🗺️|map|карта;🔔|bell|дзвоник;📒|notebook|зошит;📐|triangle|трикутник');
+topic('transport', 2, '🚌', 'Порт Мандрівників', 'У порту повно транспорту. На чому ж поїдемо далі?',
+ '🚗|car|машина;🚌|bus|автобус;🚆|train|потяг;✈️|plane|літак;🚲|bike|велосипед;🚢|ship|корабель;⛵|boat|човен;🚕|taxi|таксі;🚚|truck|вантажівка;🚁|helicopter|гелікоптер;🚀|rocket|ракета;🚜|tractor|трактор;🏍️|motorbike|мотоцикл;🛴|scooter|самокат;🚑|ambulance|швидка допомога;🚒|fire engine|пожежна машина;🚇|metro|метро');
+topic('verbs1', 2, '🏃', 'Галявина Дій', 'Тут усі щось роблять. Скажи, що саме!',
+ '🏃|run|бігти;🦘|jump|стрибати;🏊|swim|плавати;🍽️|eat|їсти;🥤|drink|пити;😴|sleep|спати;📖|read|читати;✍️|write|писати;🎤|sing|співати;💃|dance|танцювати;🎲|play|грати;🖍️|draw|малювати;🧑‍🍳|cook|готувати;🕊️|fly|літати;🚶|walk|ходити;😭|cry|плакати;😂|laugh|сміятися;🧹|clean|прибирати');
+topic('nature2', 2, '⛰️', 'Вулканічний Острів', 'Вулкан бурчить! Пройди крізь гори, ліси й річки.',
+ '⛰️|mountain|гора;🌲|forest|ліс;🏞️|river|річка;🏝️|island|острів;🌋|volcano|вулкан;🏜️|desert|пустеля;🌬️|wind|вітер;⛈️|storm|гроза;🌫️|fog|туман;🌍|earth|земля;🌱|plant|рослина;🪨|stone|камінь;🌾|field|поле;🌅|sunrise|схід сонця');
+topic('sport', 2, '⚽', 'Спортивна Арена', 'Пірати влаштували змагання. Хто переможе?',
+ '⚽|football|футбол;🏀|basketball|баскетбол;🎾|tennis|теніс;🏐|volleyball|волейбол;⛷️|skiing|лижі;⛸️|skating|ковзани;♟️|chess|шахи;🏓|ping-pong|настільний теніс;🏆|cup|кубок;🏅|medal|медаль;🥅|goal|гол;👥|team|команда;🏁|finish|фініш;🤸|gymnastics|гімнастика;🛹|skateboard|скейтборд');
+topic('fun', 2, '🎉', 'Острів Свят', 'Тут завжди свято! Повеселися разом із піратами.',
+ '🎄|Christmas|Різдво;🎃|pumpkin|гарбуз;🎁|present|подарунок;🎉|party|вечірка;🎆|fireworks|феєрверк;🎠|carousel|карусель;🎪|circus|цирк;🤡|clown|клоун;🎭|theatre|театр;🎵|music|музика;🎸|guitar|гітара;🎹|piano|піаніно;🎻|violin|скрипка;🎂|birthday|день народження');
+// ----- Рівень 3 -----
+topic('adjectives', 3, '🤔', 'Дзеркальна Затока', 'У дзеркалах усе різне: велике й маленьке, веселе й сумне.',
+ '🐘|big|великий;🐭|small|маленький;🔥|hot|гарячий;🥶|cold|холодний;😊|happy|щасливий;😢|sad|сумний;🐆|fast|швидкий;🐌|slow|повільний;🦒|tall|високий;😠|angry|сердитий;😫|tired|втомлений;🤤|hungry|голодний;🌺|beautiful|гарний;👴|old|старий;✨|new|новий;💪|strong|сильний;🧼|clean|чистий;🤫|quiet|тихий;📢|loud|гучний;😨|scared|наляканий;🤒|ill|хворий;😋|tasty|смачний');
+topic('jobs', 3, '👷', 'Місто Майстрів', 'Тут кожен має професію. Дізнайся, хто чим займається.',
+ '👨‍⚕️|doctor|лікар;👩‍🏫|teacher|вчитель;👩‍🍳|cook|кухар;👮|police officer|поліцейський;👨‍🚒|firefighter|пожежник;👨‍🌾|farmer|фермер;👨‍✈️|pilot|пілот;👩‍🎨|artist|художник;👩‍🎤|singer|співак;👷|builder|будівельник;👩‍🔬|scientist|науковець;👨‍🚀|astronaut|астронавт;👨‍🔧|mechanic|механік;👨‍💻|programmer|програміст;👨‍⚖️|judge|суддя;💇|hairdresser|перукар;🕵️|detective|детектив');
+topic('places', 3, '🏙️', 'Портове Місто', 'Ти в великому місті. Не заблукай!',
+ '🏞️|park|парк;🏪|shop|магазин;🏥|hospital|лікарня;🏦|bank|банк;🏰|castle|замок;🏟️|stadium|стадіон;📚|library|бібліотека;🎬|cinema|кінотеатр;🐒|zoo|зоопарк;🏖️|beach|пляж;🛫|airport|аеропорт;🏙️|city|місто;🏡|village|село;🌉|bridge|міст;🛣️|road|дорога;⛪|church|церква;🏛️|museum|музей;🍽️|restaurant|ресторан');
+topic('time', 3, '📅', 'Вежа Часу', 'Годинник на вежі зупинився. Запусти його знову!',
+ '🌷|spring|весна;🌞|summer|літо;🍂|autumn|осінь;☃️|winter|зима;🌅|morning|ранок;🌇|evening|вечір;🌃|night|ніч;📅|week|тиждень;🗓️|month|місяць;⏰|hour|година;⏱️|minute|хвилина;👉|today|сьогодні;⏭️|tomorrow|завтра;⏮️|yesterday|вчора;📆|Monday|понеділок;📆|Tuesday|вівторок;📆|Wednesday|середа;📆|Thursday|четвер;📆|Friday|п’ятниця;📆|Saturday|субота;📆|Sunday|неділя;🎉|holiday|свято');
+topic('verbs2', 3, '⚙️', 'Майстерня Дій', 'У майстерні кипить робота. Що тут роблять?',
+ '📂|open|відкривати;🔒|close|закривати;🛒|buy|купувати;🎁|give|дарувати;🤔|think|думати;👀|see|бачити;👂|hear|чути;🗣️|speak|говорити;🎧|listen|слухати;🧑‍🎓|learn|вчитися;🤝|help|допомагати;⏳|wait|чекати;🔍|find|знаходити;🏗️|build|будувати;🧗|climb|лазити;🎣|catch|ловити;🏆|win|вигравати;💭|dream|мріяти;📞|call|дзвонити;🚿|wash|мити');
+topic('numbers2', 3, '💯', 'Скарбниця Чисел', 'Порахуй монети в скарбниці — але вже великими числами!',
+ '11|eleven|одинадцять;12|twelve|дванадцять;13|thirteen|тринадцять;14|fourteen|чотирнадцять;15|fifteen|п’ятнадцять;16|sixteen|шістнадцять;17|seventeen|сімнадцять;18|eighteen|вісімнадцять;19|nineteen|дев’ятнадцять;20|twenty|двадцять;30|thirty|тридцять;40|forty|сорок;50|fifty|п’ятдесят;💯|hundred|сто');
+topic('phrases', 3, '💬', 'Острів Ввічливості', 'Місцеві жителі дуже ввічливі. Поговори з ними!',
+ '👋|hello|привіт;🙋|goodbye|до побачення;🙏|please|будь ласка;💐|thank you|дякую;😔|sorry|вибач;✅|yes|так;❌|no|ні;🌄|good morning|доброго ранку;🌙|good night|на добраніч;🙂|how are you?|як справи?;🏷️|my name is|мене звати;❤️|I love you|я тебе люблю;🎂|happy birthday|з днем народження;🤚|excuse me|перепрошую;🤝|nice to meet you|приємно познайомитись;👍|OK|добре');
+topic('space', 3, '🚀', 'Зоряна Обсерваторія', 'Подивись у телескоп — там цілий всесвіт слів!',
+ '🪐|planet|планета;🌍|Earth|Земля;🛰️|satellite|супутник;☄️|comet|комета;🔭|telescope|телескоп;🔬|microscope|мікроскоп;🧲|magnet|магніт;🔋|battery|батарейка;💡|light|світло;⚡|energy|енергія;🌌|galaxy|галактика;👽|alien|прибулець;🛸|UFO|НЛО;🌠|meteor|метеор');
+topic('travel', 3, '🧳', 'Остання Подорож', 'Скарб уже близько! Збери все, що потрібно мандрівнику.',
+ '🧳|suitcase|валіза;🎫|ticket|квиток;🛂|passport|паспорт;🏨|hotel|готель;🗺️|map|карта;📷|camera|фотоапарат;⛺|tent|намет;🧭|compass|компас;💎|treasure|скарб;⚓|anchor|якір;🏴‍☠️|pirate|пірат;🌐|world|світ;🚂|journey|подорож;🏔️|hill|пагорб;📸|photo|фото');
+
+const LEVEL_TOPICS = {
+  1: ['animals1', 'food1', 'colors', 'numbers1', 'family', 'toys', 'body', 'nature1', 'home1'],
+  2: ['animals2', 'food2', 'clothes', 'school', 'transport', 'verbs1', 'nature2', 'sport', 'fun'],
+  3: ['adjectives', 'jobs', 'places', 'time', 'verbs2', 'numbers2', 'phrases', 'space', 'travel']
+};
+// Карта квесту: 9 островів-тем і 3 пірати-боси
+function questStations(lvl){
+  const t = LEVEL_TOPICS[lvl], st = [];
+  for (let g = 0; g < 3; g++) {
+    for (let j = 0; j < 3; j++) st.push({ kind: 'topic', topics: [t[g * 3 + j]] });
+    st.push({ kind: 'boss', topics: t.slice(g * 3, g * 3 + 3), final: g === 2 });
+  }
+  return st;
+}
+const STICKERS = {
+  1: ['🦜','🐠','🦀','🗝️','🐢','🐬','🐙','🧭','🐳','🦩','🦄','👑'],
+  2: ['🦈','🐡','⚓','🗺️','🏝️','🌋','🦑','💎','🐊','🦚','🪸','🏆'],
+  3: ['🛸','🪐','🌠','🔭','🦕','🦖','🐲','🧜','🧞','🏰','🌈','🔱']
+};
+const BOSSES = [
+  { ic:'🏴‍☠️', n:'Пірат Бородань', story:'Пірат Бородань охороняє перший шматок карти. Переможи його у словесній битві!' },
+  { ic:'☠️', n:'Капітан Гак', story:'Капітан Гак ставить найхитріші питання. Покажи, що ти все запам’ятав!' },
+  { ic:'🐉', n:'Морський Дракон', story:'Останній страж скарбу — Морський Дракон. Переможи його і забирай скарб!' }
+];
+
+// =================== АНГЛІЙСЬКА: ДУЕЛЬ І КВЕСТ ===================
 const EN_TOTAL = 10;
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const canSpeak = () => { try { return !!(NET.canSpeak && NET.canSpeak()); } catch(e) { return false; } };
+const myLevel = () => { try { return +(JSON.parse(localStorage.getItem('en_quest') || '{}').level) || 0; } catch(e) { return 0; } };
+
+// Питання трьох видів: pic — картинка і слово; listen — почути слово; spell — скласти слово з літер
+function makeQuestion(lvl, topicIds, o){
+  o = o || {};
+  const pool = [].concat(...topicIds.map(t => TOPICS[t].w));
+  const levelPool = [].concat(...LEVEL_TOPICS[lvl].map(t => TOPICS[t].w));
+  const used = o.used || [];
+  let w = null;
+  if (o.prefer && o.prefer.length) {
+    const en = o.prefer.shift();
+    w = levelPool.find(x => x.en === en) || null;
+  }
+  if (!w) {
+    const free = pool.filter(x => !used.includes(x.t + ':' + x.en));
+    const src = free.length ? free : pool;
+    w = src[Math.floor(Math.random() * src.length)];
+  }
+  used.push(w.t + ':' + w.en);
+  const maxLen = lvl === 1 ? 0 : lvl === 2 ? 6 : 10;
+  const spellable = /^[a-z]+$/.test(w.en) && w.en.length >= 3 && w.en.length <= maxLen;
+  const r = Math.random();
+  let type = 'pic';
+  const pSpell = o.boss ? 0.45 : lvl === 2 ? 0.25 : lvl === 3 ? 0.35 : 0;
+  const pListen = o.listen ? (lvl === 1 ? 0.3 : 0.2) : 0;
+  if (spellable && r < pSpell) type = 'spell';
+  else if (r < pSpell + pListen) type = 'listen';
+  const q = { type, lvl, e: w.e, en: w.en, ua: w.ua, t: w.t };
+  if (type === 'spell') {
+    const extra = lvl === 3 ? 2 : 0, abc = 'abcdefghijklmnoprstuwy';
+    const letters = w.en.split('');
+    for (let i = 0; i < extra; i++) letters.push(abc[Math.floor(Math.random() * abc.length)]);
+    q.tiles = shuffle(letters);
+    return q;
+  }
+  const n = EN_LVL[lvl].opts;
+  const okDistr = x => x.en.toLowerCase() !== w.en.toLowerCase() && x.ua !== w.ua && (type !== 'listen' || lvl !== 1 || x.e !== w.e);
+  let distr = shuffle(TOPICS[w.t].w.filter(okDistr));
+  if (distr.length < n - 1) distr = distr.concat(shuffle(levelPool.filter(x => okDistr(x) && !distr.includes(x))));
+  const picked = [];
+  for (const x of distr) {
+    if (picked.length >= n - 1) break;
+    if (picked.some(p => p.en === x.en || p.ua === x.ua || (type === 'listen' && lvl === 1 && p.e === x.e))) continue;
+    picked.push(x);
+  }
+  const opts = shuffle(picked.concat([w])).map(x => ({ e: x.e, en: x.en, ua: x.ua }));
+  q.dir = type === 'listen' ? 'listen' : (Math.random() < .5 ? 'en2ua' : 'ua2en');
+  q.opts = opts; q.ok = opts.findIndex(x => x.en === w.en);
+  return q;
+}
 
 const EN = {
   st: null, timer: null,
   active(){ return !!this.st; },
   stop(){ clearTimeout(this.timer); this.st = null; },
   leaveFree(){ return !this.st || this.st.phase === 'over' || this.st.k < 1; },
-  pool(topic){ return topic === 'all' || !WORDS[topic] ? [].concat(WORDS.animals, WORDS.food, WORDS.colors, WORDS.things) : WORDS[topic]; },
-  fresh(mode, topic){
-    return { mode, topic, total: EN_TOTAL, k: -1, q: null, phase: 'wait', ans: { host: null, client: null },
-             winner: null, score: { host: 0, client: 0 }, used: [], retry: [], t0: Date.now(), note: '' };
-  },
-  me(){ return S.mode === 'local' ? 'host' : S.role; },
+  me(){ return this.st && this.st.mode === 'net' ? S.role : 'host'; },
   opp(){ return this.me() === 'host' ? 'client' : 'host'; },
-
-  makeQ(){
-    const st = this.st, pool = this.pool(st.topic);
-    let w = null;
-    if (st.retry.length && Math.random() < .6) w = st.retry.shift();
-    if (!w) {
-      const free = pool.filter(x => !st.used.includes(x[1]));
-      const src = free.length ? free : pool;
-      w = src[Math.floor(Math.random() * src.length)];
-    }
-    st.used.push(w[1]);
-    const dir = Math.random() < .5 ? 'en2ua' : 'ua2en';
-    const others = pool.filter(x => x[1] !== w[1] && x[2] !== w[2]).sort(() => Math.random() - .5).slice(0, 3);
-    const opts = others.concat([w]).sort(() => Math.random() - .5).map(x => ({ en: x[1], ua: x[2] }));
-    return { e: w[0], en: w[1], ua: w[2], dir, opts, ok: opts.findIndex(o => o.en === w[1]) };
+  fresh(mode){
+    return { mode, total: EN_TOTAL, k: -1, q: null, qc: null, phase: 'wait', ans: { host: null, client: null },
+             winner: null, score: { host: 0, client: 0 }, used: [], note: '', sp: null, t0: Date.now(),
+             lvlOpt: '2', lvl: { host: 2, client: 2 }, res: [], mist: 0 };
   },
 
-  // ---------- Старт ----------
-  startLocal(){
-    this.stop(); this.st = this.fresh('local', 'all');
-    enterGame(); this.timer = setTimeout(() => this.nextQ(), 600);
-  },
-  hostStart(topic){
-    this.stop(); this.st = this.fresh('net', topic || 'all');
-    send({ t:'start', game:'en', topic: this.st.topic, name: S.myName });
+  // ---------- Дуель ----------
+  hostStart(opt){
+    this.stop(); const st = this.st = this.fresh('net');
+    st.lvlOpt = opt || 'own';
+    const mine = myLevel() || 2;
+    st.lvl = st.lvlOpt === 'own' ? { host: mine, client: null } : { host: +st.lvlOpt, client: +st.lvlOpt };
+    send({ t:'start', game:'en', lvlOpt: st.lvlOpt, hostLvl: st.lvl.host, name: S.myName });
     enterGame(); this.timer = setTimeout(() => this.nextQ(), 1200);
   },
   clientStart(m){
-    this.stop(); this.st = this.fresh('net', m.topic);
+    this.stop(); const st = this.st = this.fresh('net');
+    st.lvlOpt = m.lvlOpt || '2';
+    st.lvl = { host: m.hostLvl || 2, client: st.lvlOpt === 'own' ? (myLevel() || 2) : +st.lvlOpt };
+    send({ t:'en_lvl', lvl: st.lvl.client });
     enterGame();
   },
   newRound(){
-    const topic = this.st ? this.st.topic : 'all', mode = this.st ? this.st.mode : S.mode;
-    this.stop(); this.st = this.fresh(mode, topic);
+    const old = this.st; if (!old) return;
+    const st = this.st = this.fresh(old.mode);
+    st.lvlOpt = old.lvlOpt; st.lvl = old.lvl;
     closeModal(); S.rematchAsked = false; this.render();
-    if (mode === 'local' || S.role === 'host') this.timer = setTimeout(() => this.nextQ(), 900);
+    if (S.role === 'host') this.timer = setTimeout(() => this.nextQ(), 900);
   },
-
-  // ---------- Хід гри (рішення приймає головний телефон) ----------
   nextQ(){
-    const st = this.st; if (!st) return;
-    if (st.mode === 'net' && !S.connected) { this.timer = setTimeout(() => this.nextQ(), 700); return; }
+    const st = this.st; if (!st || st.mode !== 'net') return;
+    if (!S.connected || st.lvl.client == null) { this.timer = setTimeout(() => this.nextQ(), 600); return; }
     if (st.k + 1 >= st.total) return this.finish();
-    st.k++; st.q = this.makeQ(); st.phase = 'q';
-    st.ans = { host: null, client: null }; st.winner = null; st.note = '';
-    if (st.mode === 'net') send({ t:'en_q', k: st.k, q: st.q, score: st.score });
+    st.k++;
+    const same = st.lvl.host === st.lvl.client;
+    st.q = makeQuestion(st.lvl.host, LEVEL_TOPICS[st.lvl.host], { used: st.used });
+    st.qc = same ? st.q : makeQuestion(st.lvl.client, LEVEL_TOPICS[st.lvl.client], { used: st.used });
+    st.phase = 'q'; st.ans = { host: null, client: null }; st.winner = null; st.note = '';
+    st.sp = st.q.type === 'spell' ? { pos: 0, used: [], wrong: 0, bad: -1 } : null;
+    send({ t:'en_q', k: st.k, q: st.qc, same, score: st.score });
     this.showQ();
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => this.resolve(), 15000);
+    const long = st.q.type === 'spell' || st.qc.type === 'spell';
+    this.timer = setTimeout(() => this.resolve(), long ? 30000 : 15000);
   },
-  showQ(){
-    const q = this.st.q;
-    if (q && q.dir === 'en2ua') this.say(q.en);
-    this.render();
-  },
-  answer(role, o){
+  answer(role, o){                                  // лише на головному телефоні
     const st = this.st;
     if (!st || st.phase !== 'q' || st.ans[role] != null) return;
     st.ans[role] = o;
-    if (o === st.q.ok) { st.winner = role; this.resolve(); return; }
-    if (st.mode === 'local') { st.retry.push([st.q.e, st.q.en, st.q.ua]); this.resolve(); return; }
+    const q = role === 'host' ? st.q : st.qc;
+    if (o === 'done' || o === q.ok) { st.winner = role; this.resolve(); return; }
     if (st.ans.host != null && st.ans.client != null) this.resolve();
     else this.render();
   },
@@ -1723,61 +1875,38 @@ const EN = {
     clearTimeout(this.timer);
     st.phase = 'r';
     if (st.winner) st.score[st.winner]++;
-    if (st.mode === 'net') send({ t:'en_r', k: st.k, winner: st.winner, ans: st.ans, score: st.score });
+    send({ t:'en_r', k: st.k, winner: st.winner, ans: st.ans, score: st.score });
     this.showReveal();
-    this.timer = setTimeout(() => this.nextQ(), st.winner ? 1800 : 2600);
-  },
-  showReveal(){
-    const st = this.st, q = st.q, me = this.me();
-    if (st.mode === 'local') st.note = st.winner ? 'Правильно! 🎉' : `Правильно: ${q.en} — ${q.ua}`;
-    else if (st.winner === me) st.note = 'Ти перший! +1 🎉';
-    else if (st.winner) st.note = `${S.oppName} відповів швидше`;
-    else st.note = `Ніхто не вгадав. Правильно: ${q.en} — ${q.ua}`;
-    if (q.dir === 'ua2en' || !st.winner) this.say(q.en);
-    NET.vibrate(st.winner === me ? 60 : 20);
-    this.render();
+    this.timer = setTimeout(() => this.nextQ(), st.winner ? 1900 : 2700);
   },
   finish(){
     const st = this.st; if (!st) return;
     clearTimeout(this.timer);
-    st.phase = 'over'; st.t1 = Date.now();
-    if (st.mode === 'net' && S.role === 'host') send({ t:'en_end', score: st.score });
+    st.phase = 'over';
+    if (S.role === 'host') send({ t:'en_end', score: st.score });
     this.render();
     setTimeout(() => this.showResult(), 500);
   },
-  resultInfo(){
-    const st = this.st, me = this.me(), op = this.opp();
-    if (st.mode === 'local') {
-      const sec = Math.round(((st.t1 || Date.now()) - st.t0) / 1000);
-      const s = st.score.host;
-      return { title: s >= 9 ? 'Чудово! 🏆' : s >= 6 ? 'Добре! 👍' : 'Треба ще потренуватись 💪',
-               why: `Правильно ${s} з ${st.total} за ${sec} с.` };
-    }
-    const a = st.score[me], b = st.score[op];
-    if (a > b) return { title: 'Перемога! 🏆', why: `Рахунок ${a} : ${b}` };
-    if (a < b) return { title: `Переміг ${esc(S.oppName)}`, why: `Рахунок ${a} : ${b}` };
-    return { title: 'Нічия 🤝', why: `Рахунок ${a} : ${b}` };
-  },
   showResult(){
-    if (!this.st || this.st.phase !== 'over' || S.modalKind) return;
-    const r = this.resultInfo();
-    ask('result', r.title, r.why, [
-      { label:'Ще раз', cls:'gold', fn: rematch },
-      { label:'В меню', fn: toMenu }
-    ]);
+    const st = this.st;
+    if (!st || st.phase !== 'over' || S.modalKind || st.mode !== 'net') return;
+    const a = st.score[this.me()], b = st.score[this.opp()];
+    const title = a > b ? 'Перемога! 🏆' : a < b ? `Переміг ${esc(S.oppName)}` : 'Нічия 🤝';
+    ask('result', title, `Рахунок ${a} : ${b}`, [{ label:'Ще раз', cls:'gold', fn: rematch }, { label:'В меню', fn: toMenu }]);
   },
-  say(text){ try { if (NET.speak) NET.speak(text); } catch(e) {} },
-
-  // ---------- Мережа ----------
   sendState(){
     const st = this.st;
-    send({ t:'state', game:'en', topic: st.topic, k: st.k, q: st.q, phase: st.phase, ans: st.ans,
+    send({ t:'state', game:'en', lvlOpt: st.lvlOpt, lvl: st.lvl, k: st.k, q: st.qc, phase: st.phase, ans: st.ans,
            winner: st.winner, score: st.score, name: S.myName });
   },
   onState(m){
-    if (!this.st) this.st = this.fresh('net', m.topic);
-    Object.assign(this.st, { topic: m.topic, k: m.k, q: m.q, phase: m.phase, ans: m.ans || { host:null, client:null },
-                             winner: m.winner, score: m.score || { host:0, client:0 } });
+    if (!this.st) this.st = this.fresh('net');
+    const st = this.st;
+    Object.assign(st, { lvlOpt: m.lvlOpt, k: m.k, phase: m.phase, ans: m.ans || { host:null, client:null },
+                        winner: m.winner, score: m.score || { host:0, client:0 } });
+    if (m.lvl) st.lvl = { host: m.lvl.host, client: st.lvl.client || m.lvl.client };
+    if (!st.q || !m.q || st.q.en !== m.q.en) { st.q = m.q; st.sp = m.q && m.q.type === 'spell' ? { pos: 0, used: [], wrong: 0, bad: -1 } : null; }
+    send({ t:'en_lvl', lvl: st.lvl.client || myLevel() || 2 });
     const was = inGame();
     enterGame();
     if (was) toast('Зв’язок відновлено');
@@ -1785,82 +1914,288 @@ const EN = {
   onMsg(m){
     const st = this.st; if (!st) return;
     switch (m.t) {
+      case 'en_lvl': if (S.role === 'host') st.lvl.client = m.lvl || 2; break;
       case 'en_q':
-        st.k = m.k; st.q = m.q; st.phase = 'q'; st.ans = { host: null, client: null };
+        st.k = m.k; st.q = m.q; st.phase = 'q'; st.ans = { host: null, client: null }; st.same = m.same;
         st.winner = null; st.score = m.score; st.note = '';
+        st.sp = m.q.type === 'spell' ? { pos: 0, used: [], wrong: 0, bad: -1 } : null;
         this.showQ(); break;
-      case 'en_a':
-        if (S.role === 'host' && m.k === st.k) this.answer('client', m.o);
-        break;
+      case 'en_a': if (S.role === 'host' && m.k === st.k) this.answer('client', m.o); break;
       case 'en_r':
         if (m.k !== st.k) return;
         st.phase = 'r'; st.winner = m.winner; st.ans = m.ans; st.score = m.score;
         this.showReveal(); break;
-      case 'en_end':
-        st.score = m.score; if (st.phase !== 'over') this.finish();
-        break;
+      case 'en_end': st.score = m.score; if (st.phase !== 'over') this.finish(); break;
     }
   },
 
-  // ---------- Екран ----------
-  click(o){
-    const st = this.st;
-    if (!st || st.phase !== 'q' || (st.mode === 'net' && !S.connected)) return;
-    const me = this.me();
-    if (st.ans[me] != null) return;
-    if (st.mode === 'local' || S.role === 'host') { this.answer(me, o); return; }
-    st.ans[me] = o;                                   // гість: показуємо свій вибір, рішення — за головним
-    send({ t:'en_a', k: st.k, o });
-    st.note = o === st.q.ok ? 'Правильно! Чекаю, хто був першим…' : 'Ой, не те слово';
+  // ---------- Квест (один гравець) ----------
+  startQuest(lvl, idx, review){
+    this.stop();
+    const st = this.st = this.fresh('quest');
+    const stations = questStations(lvl);
+    st.qlvl = lvl; st.idx = idx; st.review = !!review;
+    st.station = review ? { kind: 'review', topics: LEVEL_TOPICS[lvl] } : stations[idx];
+    st.total = review ? Math.min(8, EQ.mistakes(lvl).length) : st.station.kind === 'boss' ? 8 : 6;
+    st.prefer = review ? shuffle(EQ.mistakes(lvl)) : [];
+    S.mode = 'local'; S.gameType = 'en';
+    enterGame(); this.timer = setTimeout(() => this.nextQ1(), 500);
+  },
+  nextQ1(){
+    const st = this.st; if (!st || st.mode !== 'quest') return;
+    if (st.k + 1 >= st.total) return this.finishQuest();
+    st.k++;
+    st.q = makeQuestion(st.qlvl, st.station.topics, { used: st.used, listen: canSpeak(), boss: st.station.kind === 'boss', prefer: st.prefer });
+    st.phase = 'q'; st.ans = { host: null, client: null }; st.winner = null; st.note = '';
+    st.sp = st.q.type === 'spell' ? { pos: 0, used: [], wrong: 0, bad: -1 } : null;
+    this.showQ();
+  },
+  answer1(o){
+    const st = this.st; if (!st || st.phase !== 'q') return;
+    st.ans.host = o;
+    const ok = o === 'done' ? (st.sp.wrong < 3) : o === st.q.ok;
+    st.res.push(ok);
+    if (ok) { EQ.forget(st.qlvl, st.q.en); st.winner = 'host'; }
+    else { st.mist++; EQ.remember(st.qlvl, st.q.en); }
+    st.phase = 'r';
+    st.note = ok ? ['Чудово! 🎉', 'Правильно! ⭐', 'Супер! 💪', 'Так тримати! 🚀'][Math.floor(Math.random() * 4)]
+                 : `Правильно: ${st.q.en} — ${st.q.ua}`;
+    if (st.q.type !== 'pic' || st.q.dir === 'ua2en' || !ok) this.say(st.q.en);
+    NET.vibrate(ok ? 40 : 120);
+    this.render();
+    this.timer = setTimeout(() => this.nextQ1(), ok ? 1300 : 2600);
+  },
+  finishQuest(){
+    const st = this.st; if (!st) return;
+    st.phase = 'over'; this.render();
+    if (st.review) {
+      setTimeout(() => ask('result', 'Повторення завершено 🔁', `Правильно ${st.res.filter(Boolean).length} з ${st.total}. Слова, які ти вже знаєш, зникли зі списку помилок.`,
+        [{ label:'До карти', cls:'gold', fn: () => EQ.open() }]), 400);
+      return;
+    }
+    const boss = st.station.kind === 'boss';
+    const m = st.mist;
+    const stars = boss ? (m === 0 ? 3 : m <= 2 ? 2 : m <= 4 ? 1 : 0) : (m === 0 ? 3 : m <= 1 ? 2 : m <= 3 ? 1 : 0);
+    const r = EQ.complete(st.qlvl, st.idx, stars);
+    setTimeout(() => EQ.showResult(st.qlvl, st.idx, stars, r, st), 400);
+  },
+
+  // ---------- Спільне ----------
+  showQ(){
+    const q = this.st.q;
+    if (q && (q.type === 'listen' || (q.type === 'pic' && q.dir === 'en2ua'))) this.say(q.en);
     this.render();
   },
+  showReveal(){
+    const st = this.st, q = st.q, me = this.me();
+    if (st.winner === me) st.note = 'Ти перший! +1 🎉';
+    else if (st.winner) st.note = `${S.oppName} відповів швидше`;
+    else st.note = `Ніхто не вгадав. Правильно: ${q.en} — ${q.ua}`;
+    if (q.type !== 'pic' || q.dir === 'ua2en' || !st.winner) this.say(q.en);
+    NET.vibrate(st.winner === me ? 60 : 20);
+    this.render();
+  },
+  say(text){ try { if (NET.speak) NET.speak(text); } catch(e) {} },
+  click(o){
+    const st = this.st;
+    if (!st || st.phase !== 'q') return;
+    if (st.mode === 'quest') return this.answer1(o);
+    if (!S.connected) return;
+    const me = this.me();
+    if (st.ans[me] != null) return;
+    if (S.role === 'host') { this.answer(me, o); return; }
+    st.ans[me] = o;
+    send({ t:'en_a', k: st.k, o });
+    st.note = (o === 'done' || o === st.q.ok) ? 'Правильно! Чекаю, хто був першим…' : 'Ой, не те слово';
+    this.render();
+  },
+  tile(i){
+    const st = this.st, sp = st && st.sp;
+    if (!sp || st.phase !== 'q' || sp.used.includes(i) || st.ans[this.me()] != null) return;
+    const want = st.q.en[sp.pos], ch = st.q.tiles[i];
+    if (ch === want) {
+      sp.used.push(i); sp.pos++; sp.bad = -1;
+      if (sp.pos >= st.q.en.length) { this.click('done'); return; }
+    } else { sp.wrong++; sp.bad = i; NET.vibrate(30); }
+    this.render();
+  },
+
+  // ---------- Екран ----------
   render(){
     const st = this.st, el = $('enBody'); if (!st || !el) return;
-    const me = this.me(), op = this.opp(), local = st.mode === 'local';
+    const quest = st.mode === 'quest', me = this.me(), op = this.opp();
     let h = '<div class="enbar">';
-    h += `<div class="pl"><span class="nm">${esc(local ? 'Ти' : S.myName)}</span><b>${st.score[me]}</b></div>`;
-    h += `<div class="prog">${Math.max(0, st.k + 1)} / ${st.total}</div>`;
-    h += local ? '<div class="pl"></div>' : `<div class="pl r"><b>${st.score[op]}</b><span class="nm">${esc(S.oppName)}</span></div>`;
+    if (quest) {
+      const name = st.review ? '🔁 Повторення' : (st.station.kind === 'boss' ? BOSSES[Math.floor(st.idx / 4)].ic + ' ' + BOSSES[Math.floor(st.idx / 4)].n : TOPICS[st.station.topics[0]].ic + ' ' + TOPICS[st.station.topics[0]].n);
+      h += `<div class="pl"><span class="nm">${esc(name)}</span></div><div class="dots">`;
+      for (let i = 0; i < st.total; i++) h += `<i class="${i < st.res.length ? (st.res[i] ? 'g' : 'r') : i === st.k ? 'c' : ''}"></i>`;
+      h += '</div>';
+    } else {
+      h += `<div class="pl"><span class="nm">${esc(S.myName)} ${EN_LVL[st.lvl[me] || 2].ic}</span><b>${st.score[me]}</b></div>`;
+      h += `<div class="prog">${Math.max(0, st.k + 1)} / ${st.total}</div>`;
+      h += `<div class="pl r"><b>${st.score[op]}</b><span class="nm">${esc(S.oppName)} ${st.lvl[op] ? EN_LVL[st.lvl[op]].ic : ''}</span></div>`;
+    }
     h += '</div>';
     const q = st.q;
     if (!q || st.phase === 'wait') {
-      h += `<div class="encard"><div class="emo">🇬🇧</div><div class="ask">${st.mode === 'net' && !S.connected ? 'Немає зв’язку' : 'Приготуйся…'}</div></div>`;
+      h += `<div class="encard"><div class="emo">${quest ? '🦜' : '🇬🇧'}</div><div class="ask">${!quest && !S.connected ? 'Немає зв’язку' : 'Приготуйся…'}</div></div>`;
+    } else if (q.type === 'spell') {
+      const sp = st.sp || { pos: 0, used: [], wrong: 0, bad: -1 };
+      const done = st.phase !== 'q';
+      h += `<div class="encard"><div class="emo">${q.e}</div><div class="word">${esc(q.ua)}</div><div class="ask">Склади слово англійською</div>`;
+      h += '<div class="slots">' + q.en.split('').map((c, i) => `<span class="${i < sp.pos || done ? 'f' : ''}">${i < sp.pos || done ? c : ''}</span>`).join('') + '</div></div>';
+      const hint = sp.wrong >= 3 && !done ? q.tiles.findIndex((c, i) => c === q.en[sp.pos] && !sp.used.includes(i)) : -1;
+      h += '<div class="tiles">' + q.tiles.map((c, i) => `<button data-t="${i}" class="${sp.used.includes(i) ? 'used' : ''} ${sp.bad === i ? 'bad' : ''} ${hint === i ? 'hint' : ''}" ${done || sp.used.includes(i) ? 'disabled' : ''}>${c}</button>`).join('') + '</div>';
     } else {
-      const show = q.dir === 'en2ua' ? q.en : q.ua;
-      const askTxt = q.dir === 'en2ua' ? 'Як це українською?' : 'Як це англійською?';
-      const canSpeak = q.dir === 'en2ua' || st.phase !== 'q';
-      h += `<div class="encard"><div class="emo">${q.e}</div><div class="word">${esc(show)}` +
-           (canSpeak ? ` <button class="spk" data-say="1">🔊</button>` : '') + `</div><div class="ask">${askTxt}</div></div>`;
-      h += '<div class="opts">';
+      const listen = q.type === 'listen';
+      if (listen) h += `<div class="encard"><button class="bigspk" data-say="1">🔊</button><div class="ask">Послухай і вибери правильне${q.lvl === 1 ? ' зображення' : ' слово'}</div></div>`;
+      else {
+        const show = q.dir === 'en2ua' ? q.en : q.ua;
+        const canSay = q.dir === 'en2ua' || st.phase !== 'q';
+        h += `<div class="encard"><div class="emo">${q.e}</div><div class="word">${esc(show)}${canSay ? ' <button class="spk" data-say="1">🔊</button>' : ''}</div>` +
+             `<div class="ask">${q.dir === 'en2ua' ? 'Як це українською?' : 'Як це англійською?'}</div></div>`;
+      }
+      const emojiOpts = listen && q.lvl === 1;
+      h += `<div class="opts ${emojiOpts ? 'emo' : ''} n${q.opts.length}">`;
       q.opts.forEach((o, k) => {
-        const txt = q.dir === 'en2ua' ? o.ua : o.en;
+        const txt = emojiOpts ? o.e : listen ? o.en : q.dir === 'en2ua' ? o.ua : o.en;
         let cls = '';
-        const mine = st.ans[me] === k, theirs = !local && st.ans[op] === k;
+        const mine = st.ans[me] === k, theirs = !quest && st.same && st.ans[op] === k;
         if (st.phase !== 'q') { if (k === q.ok) cls = 'ok'; else if (mine) cls = 'bad'; }
         else if (mine) cls = k === q.ok ? 'ok' : 'bad';
         const dis = st.phase !== 'q' || st.ans[me] != null;
-        const tags = (mine ? '<i>ти</i>' : '') + (theirs && st.phase !== 'q' ? `<i>${esc(S.oppName)}</i>` : '');
+        const tags = (!quest && mine ? '<i>ти</i>' : '') + (theirs && st.phase !== 'q' ? `<i>${esc(S.oppName)}</i>` : '');
         h += `<button data-o="${k}" class="${cls}" ${dis ? 'disabled' : ''}>${esc(txt)}${tags}</button>`;
       });
       h += '</div>';
     }
     h += `<div class="ennote">${esc(st.note || '')}</div>`;
-    const acts = st.phase === 'over'
+    const acts = !quest && st.phase === 'over'
       ? [['again', S.rematchAsked ? '⏳' : '🔁', S.rematchAsked ? 'Чекаю…' : 'Ще раз', true], ['result', '🏁', 'Результат'], ['menu', '☰', 'Меню']]
-      : [['menu', '☰', 'Меню']];
+      : [['menu', quest ? '🗺️' : '☰', quest ? 'Карта' : 'Меню']];
     h += `<div class="actions" style="width:min(94vw,420px)">` + acts.map(([id, ic, lb, gold]) =>
       `<button data-a="${id}" class="${gold ? 'gold' : ''}"><span>${ic}</span>${lb}</button>`).join('') + '</div>';
     el.innerHTML = h;
   }
 };
 $('enBody').addEventListener('click', e => {
+  const t = e.target.closest('[data-t]');
+  if (t) { if (!t.disabled) EN.tile(+t.dataset.t); return; }
   const o = e.target.closest('[data-o]');
   if (o) { if (!o.disabled) EN.click(+o.dataset.o); return; }
   if (e.target.closest('[data-say]')) { if (EN.st && EN.st.q) EN.say(EN.st.q.en); return; }
   const a = e.target.closest('[data-a]'); if (!a) return;
-  if (a.dataset.a === 'menu') confirmLeave();
+  if (a.dataset.a === 'menu') {
+    if (EN.st && EN.st.mode === 'quest') {
+      if (EN.st.k < 1 || EN.st.phase === 'over') { EN.stop(); EQ.open(); }
+      else ask('leave', 'Повернутися на карту?', 'Прогрес цього острова не збережеться.', [
+        { label:'На карту', cls:'gold', fn: () => { EN.stop(); EQ.open(); } }, { label:'Грати далі' }]);
+    } else confirmLeave();
+  }
   else if (a.dataset.a === 'again') rematch();
   else if (a.dataset.a === 'result') EN.showResult();
+});
+
+// =================== КВЕСТ «ОСТРІВ СКАРБІВ» ===================
+const EQ = {
+  load(){
+    let d; try { d = JSON.parse(localStorage.getItem('en_quest') || '{}'); } catch(e) { d = {}; }
+    d.p = d.p || {}; d.mist = d.mist || {};
+    for (const l of [1, 2, 3]) { d.p[l] = d.p[l] || Array(12).fill(0); d.mist[l] = d.mist[l] || []; }
+    return d;
+  },
+  save(d){ try { localStorage.setItem('en_quest', JSON.stringify(d)); } catch(e) {} },
+  mistakes(l){ return this.load().mist[l]; },
+  remember(l, en){ const d = this.load(); if (!d.mist[l].includes(en)) d.mist[l].push(en); d.mist[l] = d.mist[l].slice(-40); this.save(d); },
+  forget(l, en){ const d = this.load(); d.mist[l] = d.mist[l].filter(x => x !== en); this.save(d); },
+  complete(l, idx, stars){
+    const d = this.load(), old = d.p[l][idx];
+    d.p[l][idx] = Math.max(old, stars); this.save(d);
+    return { firstSticker: stars > 0 && old === 0, improved: stars > old };
+  },
+  open(){
+    S.mode = 'local'; S.gameType = 'en';
+    const d = this.load();
+    if (!d.level) { this.pickLevel(true); return; }
+    this.view = 'map';
+    show('enquest'); this.render();
+    setTimeout(() => { const n = document.querySelector('.qnode.next'); if (n && n.scrollIntoView) n.scrollIntoView({ block: 'center' }); }, 50);
+  },
+  pickLevel(first){
+    show('enquest');
+    const html = `<h3>${first ? 'Привіт! Я папуга Кеша 🦜' : 'Хто грає?'}</h3><p>${first ? 'Вибери свій рівень, і вирушаємо шукати скарб!' : 'Кожен рівень має свою карту і свої наліпки.'}</p><div class="btns">` +
+      [1, 2, 3].map(l => `<button class="btn ${l === 2 ? 'gold' : ''}" data-l="${l}">${EN_LVL[l].ic} ${EN_LVL[l].name} · ${EN_LVL[l].age}</button>`).join('') + '</div>';
+    modal('level', html, card => card.querySelectorAll('[data-l]').forEach(b => b.onclick = () => {
+      const d = this.load(); d.level = +b.dataset.l; this.save(d); closeModal(); this.open();
+    }));
+  },
+  render(){
+    const d = this.load(), l = d.level || 1, el = $('eqBody');
+    if (!el) return;
+    const p = d.p[l], stars = p.reduce((a, b) => a + b, 0);
+    let h = `<div class="eqtop"><button class="chip" data-q="level">${EN_LVL[l].ic} ${EN_LVL[l].name} ▾</button>` +
+            `<span class="chip">⭐ ${stars}</span><button class="chip" data-q="album">📒 Наліпки</button><button class="chip" data-q="menu">☰</button></div>`;
+    if (this.view === 'album') {
+      h += '<div class="album"><h2>Мої наліпки</h2>';
+      for (const lv of [1, 2, 3]) {
+        h += `<div class="alv">${EN_LVL[lv].ic} ${EN_LVL[lv].name}</div><div class="agrid">` +
+             STICKERS[lv].map((s, i) => `<span class="${d.p[lv][i] ? '' : 'lock'}">${d.p[lv][i] ? s : '❔'}</span>`).join('') + '</div>';
+      }
+      h += `<button class="btn gold" data-q="map" style="margin-top:12px">🗺️ До карти</button></div>`;
+      el.innerHTML = h; return;
+    }
+    const stations = questStations(l), next = p.findIndex(x => x === 0);
+    const done = next === -1;
+    h += `<div class="parrot"><span>🦜</span><p>${done ? 'Ура! Скарб знайдено! Можеш покращити зірки або спробувати інший рівень.' :
+          next === 0 ? 'Привіт! Пірати сховали скарб. Пройди всі острови — і він твій!' :
+          'Молодець! Пливемо до наступного острова.'}</p></div>`;
+    const mist = d.mist[l].length;
+    if (mist) h += `<button class="review" data-q="review">🔁 Повторити слова з помилками (${mist})</button>`;
+    h += '<div class="qmap">';
+    stations.forEach((s, i) => {
+      const open = i === 0 || p[i - 1] > 0;
+      const boss = s.kind === 'boss';
+      const ic = !open ? '🔒' : boss ? (s.final ? '🧰' : BOSSES[Math.floor(i / 4)].ic) : TOPICS[s.topics[0]].ic;
+      const name = boss ? (s.final ? 'Скарб' : BOSSES[Math.floor(i / 4)].n) : TOPICS[s.topics[0]].n;
+      const st = p[i] ? '⭐'.repeat(p[i]) + '☆'.repeat(3 - p[i]) : '';
+      h += `<button class="qnode ${i % 2 ? 'r' : 'l'} ${open ? '' : 'locked'} ${boss ? 'boss' : ''} ${i === next ? 'next' : ''}" data-s="${i}" ${open ? '' : 'disabled'}>` +
+           `<span class="qic">${ic}</span><span class="qtx"><b>${esc(name)}</b><small>${st || (open ? 'Відкрито' : '')}</small></span></button>`;
+    });
+    h += '</div>';
+    el.innerHTML = h;
+  },
+  startStation(i){
+    const l = this.load().level, s = questStations(l)[i];
+    const boss = s.kind === 'boss', B = BOSSES[Math.floor(i / 4)];
+    const title = boss ? `${B.ic} ${B.n}` : `${TOPICS[s.topics[0]].ic} ${TOPICS[s.topics[0]].n}`;
+    const story = boss ? B.story : TOPICS[s.topics[0]].story;
+    ask('station', esc(title), `🦜 ${esc(story)}<br><br>${boss ? '8 питань, серед них — скласти слово з літер.' : '6 питань.'} Помилок не більше ${boss ? 4 : 3}, щоб пройти далі.`,
+      [{ label:'Вирушаємо! ⛵', cls:'gold', fn: () => EN.startQuest(l, i) }, { label:'Назад' }]);
+  },
+  showResult(l, idx, stars, r, st){
+    const sticker = STICKERS[l][idx], final = idx === 11;
+    let title, text;
+    if (stars === 0) { title = 'Ще трохи! 💪'; text = `Помилок: ${st.mist}. Спробуй ще раз — у тебе вийде!`; }
+    else if (final && r.firstSticker) { title = 'СКАРБ ЗНАЙДЕНО! 👑'; text = `${'⭐'.repeat(stars)}<br>Ти пройшов усю карту рівня «${EN_LVL[l].name}»! Нагорода: ${sticker}`; }
+    else { title = '⭐'.repeat(stars) + '☆'.repeat(3 - stars); text = r.firstSticker ? `Острів пройдено! Нова наліпка: <span style="font-size:40px">${sticker}</span>` : (r.improved ? 'Новий рекорд зірок!' : 'Острів пройдено!'); }
+    modal('result', `<h3>${title}</h3><p>${text}</p><div class="btns">` +
+      `<button class="btn gold" data-x="map">🗺️ До карти</button><button class="btn" data-x="again">🔁 Ще раз</button></div>`, card => {
+      card.querySelector('[data-x="map"]').onclick = () => { closeModal(); EN.stop(); this.open(); };
+      card.querySelector('[data-x="again"]').onclick = () => { closeModal(); EN.startQuest(l, idx); };
+    });
+    if (stars > 0) NET.vibrate(final ? 400 : 150);
+  }
+};
+$('eqBody').addEventListener('click', e => {
+  const s = e.target.closest('[data-s]');
+  if (s) { if (!s.disabled) EQ.startStation(+s.dataset.s); return; }
+  const b = e.target.closest('[data-q]'); if (!b) return;
+  const a = b.dataset.q;
+  if (a === 'menu') toMenu();
+  else if (a === 'level') EQ.pickLevel(false);
+  else if (a === 'album') { EQ.view = 'album'; EQ.render(); }
+  else if (a === 'map') { EQ.view = 'map'; EQ.render(); }
+  else if (a === 'review') EN.startQuest(EQ.load().level, 0, true);
 });
 
 // =================== ТАНЧИКИ ===================
@@ -2242,6 +2577,8 @@ function onBack(){
   if (inGame()) return confirmLeave();
   if (S.screen === 'host' || S.screen === 'join') return toMenu();
   if (S.screen === 'pick') return show('menu');
+  if (S.screen === 'enquest') { if (EQ.view === 'album') { EQ.view = 'map'; return EQ.render(); } return toMenu(); }
+  if (S.screen === 'engame' && EN.st && EN.st.mode === 'quest') { const b = document.querySelector('#enBody [data-a="menu"]'); if (b) b.click(); return; }
   NET.exit();
 }
 </script>
