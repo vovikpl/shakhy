@@ -226,6 +226,30 @@ details summary{padding:6px 2px}
 .agrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .agrid span{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--felt-2);border-radius:12px}
 .agrid span.lock{opacity:.4;font-size:20px}
+/* Гонки */
+#rcgame{padding:8px 6px;justify-content:flex-start;gap:8px}
+.rcbar{width:min(96vw,460px);justify-content:space-between}
+.rcbar b{margin:0;font-size:13px;color:var(--muted)}
+.rcbar .tkp{max-width:45%}
+#rcCanvas{border-radius:10px;box-shadow:0 0 0 3px #26332a;touch-action:none}
+.rcctl{width:min(98vw,460px);display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;max-height:190px;padding:0 4px}
+.steer{width:min(30vw,120px);aspect-ratio:1;border-radius:24px;background:var(--felt-2);border:3px solid var(--felt-3);font-size:44px;touch-action:none}
+.steer.on{background:var(--brass);color:#2a1d08;border-color:var(--brass)}
+.rcmid{display:flex;flex-direction:column;align-items:center;gap:8px}
+.brake{width:min(24vw,92px);aspect-ratio:1;border-radius:50%;background:#c9483a;font-size:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 5px 0 #8a2c22;touch-action:none}
+.brake small{font-size:11px;font-weight:700}
+.brake.on{transform:translateY(3px);box-shadow:0 2px 0 #8a2c22}
+.rcmid .btn{padding:7px 12px;font-size:13px}
+/* Бродилка */
+#mzgame{padding:8px 6px;justify-content:flex-start;gap:8px}
+.mzbar{width:min(96vw,460px);display:flex;flex-direction:column;gap:6px;background:var(--felt-2);border-radius:12px;padding:8px 10px}
+.mzrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mzrow b{margin-right:auto}
+.mzrow small{color:var(--muted);font-size:13px;line-height:1.35}
+.mzrow .chip{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:13px}
+.mzrow .chip i{width:12px;height:12px;border-radius:50%;display:inline-block}
+#mzCanvas{border-radius:8px;box-shadow:0 0 0 3px #26332a;touch-action:none}
+.mzctl{justify-content:center}
 /* Танчики */
 #tkgame{padding:8px 6px;justify-content:flex-start;gap:8px}
 .tkbar{width:min(96vw,58vh);display:flex;align-items:center;gap:8px;background:var(--felt-2);border-radius:12px;padding:6px 10px;font-size:15px}
@@ -257,8 +281,8 @@ details summary{padding:6px 2px}
     <button data-g="bs"><span>⚓</span>Морський бій</button>
     <button data-g="en"><span>🇬🇧</span>Англійська</button>
     <button data-g="tk"><span>🎯</span>Танчики</button>
-    <button disabled><span>🏎️</span>Гонки<small>скоро</small></button>
-    <button disabled><span>🗺️</span>Бродилка<small>скоро</small></button>
+    <button data-g="rc"><span>🏎️</span>Гонки</button>
+    <button data-g="mz"><span>🗺️</span>Бродилка</button>
   </div>
   <div class="field">
     <label for="name">Як тебе звати?</label>
@@ -352,6 +376,31 @@ details summary{padding:6px 2px}
       <button class="fire" id="tkFire">💥</button>
       <button class="btn ghost" id="tkMenu">☰ Меню</button>
     </div>
+  </div>
+</section>
+
+<!-- ГОНКИ -->
+<section id="rcgame" class="screen">
+  <div class="bannerSlot"></div>
+  <div class="tkbar rcbar" id="rcBar"></div>
+  <canvas id="rcCanvas"></canvas>
+  <div class="rcctl">
+    <button class="steer" id="rcL">◀</button>
+    <div class="rcmid">
+      <button class="brake" id="rcB">🛑<small>Гальмо</small></button>
+      <button class="btn ghost" id="rcMenu">☰ Меню</button>
+    </div>
+    <button class="steer" id="rcR">▶</button>
+  </div>
+</section>
+
+<!-- БРОДИЛКА -->
+<section id="mzgame" class="screen">
+  <div class="bannerSlot"></div>
+  <div class="mzbar" id="mzBar"></div>
+  <canvas id="mzCanvas"></canvas>
+  <div class="tkctl mzctl">
+    <div class="dpad" id="mzPad"><span class="u">▲</span><span class="l">◀</span><span class="r">▶</span><span class="d">▼</span><i id="mzKnob"></i></div>
   </div>
 </section>
 
@@ -640,7 +689,7 @@ const S = {
   rematchAsked: false, screen: 'menu', modalKind: null,
   transport: 'wifi', lastHostName: null, autoJoin: null, gameType: 'chess'
 };
-const inGame = () => ['game', 'bsgame', 'engame', 'tkgame'].includes(S.screen);
+const inGame = () => ['game', 'bsgame', 'engame', 'tkgame', 'rcgame', 'mzgame'].includes(S.screen);
 
 // ---------- Екрани ----------
 function show(id){
@@ -679,6 +728,8 @@ $('bLocal').onclick = () => {
   if (S.gameType === 'bs') { bsNew('me'); enterGame(); return; }
   if (S.gameType === 'en') { EQ.open(); return; }
   if (S.gameType === 'tk') { TK.startLocal(); return; }
+  if (S.gameType === 'rc') { RC.startLocal(); return; }
+  if (S.gameType === 'mz') { MZ.startLocal(); return; }
   newGame(); enterGame();
 };
 const GAMES = {
@@ -691,6 +742,12 @@ const GAMES = {
   en:    { ic:'🇬🇧', name:'Англійська', screen:'engame', local:['🏝️', 'Квест: Острів скарбів', 'Карта, наліпки, 3 рівні складності'],
            opt:{ label:'Рівень слів', list:[['own','🎯 Кожен свій'], ['1','🐣 5–7 років'], ['2','🧒 8–10 років'], ['3','🧑‍🎓 11+ років']] },
            again:'Будуть нові слова.' },
+  rc:    { ic:'🏎️', name:'Гонки', screen:'rcgame', local:['🤖', 'Гонка з комп’ютером', '3 кола проти бота'],
+           opt:{ label:'Траса', list:[['1','🏟️ Овал'], ['2','🫘 Квасоля'], ['3','🐍 Змійка']] },
+           again:'Нова гонка на тій самій трасі.' },
+  mz:    { ic:'🗺️', name:'Бродилка', screen:'mzgame', local:['🧩', 'Грати самому за двох', 'Перемикайся між героями'],
+           opt:{ label:'Почати з', list:[['next','▶ Продовжити'], ['1','🔁 Першого рівня']] },
+           again:'Почнемо з першого рівня.' },
   tk:    { ic:'🎯', name:'Танчики', screen:'tkgame', local:['🤖', 'Грати з комп’ютером', 'Танк проти бота'],
            opt:{ label:'Бій до', list:[['3','3 перемог'], ['5','5 перемог'], ['10','10 перемог']] },
            again:'Рахунок почнеться з нуля.' }
@@ -824,7 +881,7 @@ function toMenu(){
   const token = ++leaveToken;
   setTimeout(() => { if (token === leaveToken && S.mode === null) NET.disconnect(); }, 300);
   Object.assign(S, { mode:null, role:null, connected:false, game:null, over:null, selected:null });
-  B = null; clearTimeout(aiTimer); EN.stop(); TK.stop();
+  B = null; clearTimeout(aiTimer); EN.stop(); TK.stop(); RC.stop(); MZ.stop();
   closeModal(); $('banner').classList.remove('on');
   show('menu');
 }
@@ -915,13 +972,15 @@ function onMessage(line){
     if (m.t.indexOf('bs_') === 0) { bsMsg(m); return; }
     if (m.t.indexOf('en_') === 0) { EN.onMsg(m); return; }
     if (m.t.indexOf('tk_') === 0) { TK.onMsg(m); return; }
+    if (m.t.indexOf('rc_') === 0) { RC.onMsg(m); return; }
+    if (m.t.indexOf('mz_') === 0) { MZ.onMsg(m); return; }
   }
   switch (m.t) {
     case 'ping': send({ t:'pong' }); break;
     case 'hello':
       S.oppName = cleanName(m.name) || 'Суперник';
       if (S.role === 'host') {
-        if (hasGame() && inGame()) { if (S.gameType === 'tk') TK.peerBack(); sendState(); toast(`${S.oppName} повернувся в гру`); render(); }
+        if (hasGame() && inGame()) { if (S.gameType === 'tk') TK.peerBack(); if (S.gameType === 'rc') RC.peerBack(); if (S.gameType === 'mz') MZ.peerBack(); sendState(); toast(`${S.oppName} повернувся в гру`); render(); }
         else startNetGame();
       } else if (inGame()) render();
       break;
@@ -931,6 +990,8 @@ function onMessage(line){
       if (S.gameType === 'bs') { bsNew(m.first, m.round); enterGame(); break; }
       if (S.gameType === 'en') { EN.clientStart(m); break; }
       if (S.gameType === 'tk') { TK.clientStart(m); break; }
+      if (S.gameType === 'rc') { RC.clientStart(m); break; }
+      if (S.gameType === 'mz') { MZ.clientStart(m); break; }
       S.myColor = m.hostColor === 'w' ? 'b' : 'w';
       newGame(); enterGame();
       break;
@@ -939,6 +1000,8 @@ function onMessage(line){
       if (m.game === 'bs') { S.gameType = 'bs'; bsOnState(m); break; }
       if (m.game === 'en') { S.gameType = 'en'; EN.onState(m); break; }
       if (m.game === 'tk') { S.gameType = 'tk'; TK.onState(m); break; }
+      if (m.game === 'rc') { S.gameType = 'rc'; RC.onState(m); break; }
+      if (m.game === 'mz') { S.gameType = 'mz'; MZ.onState(m); break; }
       S.gameType = 'chess';
       S.myColor = m.hostColor === 'w' ? 'b' : 'w';
       if (m.name) S.oppName = cleanName(m.name);
@@ -1005,18 +1068,24 @@ function sendState(){
   if (S.gameType === 'bs') { bsSendState(); return; }
   if (S.gameType === 'en') { EN.sendState(); return; }
   if (S.gameType === 'tk') { TK.sendState(); return; }
+  if (S.gameType === 'rc') { RC.sendState(); return; }
+  if (S.gameType === 'mz') { MZ.sendState(); return; }
   send({ t:'state', game:'chess', hostColor:S.myColor, moves:S.game.uci, over:S.over, name:S.myName });
 }
 function hasGame(){
   if (S.gameType === 'bs') return !!B;
   if (S.gameType === 'en') return EN.active();
   if (S.gameType === 'tk') return TK.active();
+  if (S.gameType === 'rc') return RC.active();
+  if (S.gameType === 'mz') return MZ.active();
   return !!S.game;
 }
 
 function startNetGame(){
   if (S.gameType === 'en') { EN.hostStart(S.hostChoice); return; }
   if (S.gameType === 'tk') { TK.hostStart(+S.hostChoice || 5); return; }
+  if (S.gameType === 'rc') { RC.hostStart(+S.hostChoice || 1); return; }
+  if (S.gameType === 'mz') { MZ.hostStart(S.hostChoice); return; }
   if (S.gameType === 'bs') {
     const first = S.hostChoice === 'r' ? (Math.random() < .5 ? 'host' : 'client') : (S.hostChoice === 'w' ? 'host' : 'client');
     bsNew(first);
@@ -1046,6 +1115,8 @@ function newRound(){
   if (S.gameType === 'bs') { bsNewRound(); return; }
   if (S.gameType === 'en') { EN.newRound(); return; }
   if (S.gameType === 'tk') { TK.newRound(); return; }
+  if (S.gameType === 'rc') { RC.newRound(); return; }
+  if (S.gameType === 'mz') { MZ.newRound(); return; }
   if (S.mode === 'net') S.myColor = S.myColor === 'w' ? 'b' : 'w';
   newGame(); closeModal(); render();
   toast(S.mode === 'net' ? (S.myColor === 'w' ? 'Нова партія. Ти граєш білими' : 'Нова партія. Ти граєш чорними') : 'Нова партія');
@@ -1171,8 +1242,8 @@ function act(id){
   }
 }
 function confirmLeave(){
-  if (S.gameType === 'en' || S.gameType === 'tk') {
-    if ((S.gameType === 'en' ? EN : TK).leaveFree()) return toMenu();
+  if (['en', 'tk', 'rc', 'mz'].includes(S.gameType)) {
+    if ({ en: EN, tk: TK, rc: RC, mz: MZ }[S.gameType].leaveFree()) return toMenu();
   } else if (S.gameType === 'bs') {
     if (!B || B.over || (!B.ready && !B.outgoing.length)) return toMenu();
   } else if (S.over || !S.game || !S.game.uci.length) return toMenu();
@@ -1186,6 +1257,8 @@ function render(){
   if (S.gameType === 'bs') bsRender();
   else if (S.gameType === 'en') EN.render();
   else if (S.gameType === 'tk') TK.render();
+  else if (S.gameType === 'rc') RC.render();
+  else if (S.gameType === 'mz') MZ.render();
   else renderChess();
 }
 function renderChess(){
@@ -2569,6 +2642,688 @@ const TK = {
   $('tkFire').addEventListener('pointerdown', e => { e.preventDefault(); TK.shoot(); });
   $('tkMenu').onclick = () => confirmLeave();
   window.addEventListener('resize', () => { if (TK.st) TK.resize(); });
+})();
+
+// Позначення: # стіна, . підлога, A/B старт героїв, E вихід (кожен герой має стати на свій E),
+// k ключ (спільний), D двері (відкриваються ключем), o зірочка,
+// 1/2 кнопки на підлозі, a/b ґрати (відчинені, поки хтось стоїть на кнопці 1/2),
+// y жовта підлога (лише жовтий герой), z синя підлога (лише синій герой)
+const MZ_LEVELS = [
+ { n:'Перші кроки', hint:'Доведіть обох героїв до прапорців 🏁', m:[
+  '###########',
+  '#A..o....E#',
+  '#.#######.#',
+  '#.o.....o.#',
+  '#######.###',
+  '#.o.....o.#',
+  '#.#######.#',
+  '#B..o....E#',
+  '###########']},
+ { n:'Ключ від дверей', hint:'Ключ відчиняє двері 🚪. Ключі спільні!', m:[
+  '###########',
+  '#A....#..k#',
+  '#.....#...#',
+  '#.....#...#',
+  '###D###.###',
+  '#...o.o...#',
+  '#E.......E#',
+  '#...o.o...#',
+  '#####.#####',
+  '#B........#',
+  '###########']},
+ { n:'Чарівна кнопка', hint:'Стань на кнопку — ґрати відчиняться для друга', m:[
+  '###########',
+  '#A...1#..E#',
+  '#.....a...#',
+  '#.....#...#',
+  '#####.#...#',
+  '#..o..#.2.#',
+  '#####.#...#',
+  '#.....#...#',
+  '#.....b...#',
+  '#B....#.oE#',
+  '###########']},
+ { n:'Кольорові стежки', hint:'По жовтій стежці ходить лише жовтий, по синій — лише синій', m:[
+  '###########',
+  '#A.yyyyy.k#',
+  '#.#######.#',
+  '#.#E...E#.#',
+  '#.###D###.#',
+  '#.o.....o.#',
+  '#.#######.#',
+  '#B.zzzzz.k#',
+  '###########']},
+ { n:'Дві кнопки', hint:'Допомагайте одне одному по черзі', m:[
+  '#############',
+  '#A..#...#.1E#',
+  '#.......b...#',
+  '#...#...#...#',
+  '#####...#####',
+  '#.o.....2..o#',
+  '#####...#####',
+  '#...#...#...#',
+  '#...b...a...#',
+  '#B..#...#..E#',
+  '#############']},
+ { n:'Скарбниця', hint:'Зберіть ключі, щоб відчинити всі двері', m:[
+  '#############',
+  '#A.k#...#k.B#',
+  '#...D...D...#',
+  '#####...#####',
+  '#o....D....o#',
+  '#.#########.#',
+  '#o....k....o#',
+  '#####D#######',
+  '#...E...E...#',
+  '#############']},
+ { n:'Міст через річку', hint:'Жовтий тримає кнопку — синій проходить, і навпаки', m:[
+  '#############',
+  '#A....y....k#',
+  '#.###.y.###.#',
+  '#.#1#.y.#2#.#',
+  '#.....y.....#',
+  '#zzzzzazzzzz#',
+  '#.....b.....#',
+  '#.o...z...o.#',
+  '#.....D.....#',
+  '#E....B....E#',
+  '#############']},
+ { n:'Лабіринт', hint:'Тут легко заблукати. Тримайтеся разом!', m:[
+  '#############',
+  '#A#.....#..E#',
+  '#.#.###.#.#.#',
+  '#...#o..#.#.#',
+  '###.#.###.#.#',
+  '#o..#...1.a.#',
+  '#.#####.###.#',
+  '#.....#...#.#',
+  '#.###.###.#.#',
+  '#B..#....o#E#',
+  '#############']},
+ { n:'Хрест', hint:'Кожна кнопка відчиняє ґрати десь далеко', m:[
+  '#############',
+  '#A.yy.1.zz.B#',
+  '#.###.#.###.#',
+  '#.#o.....o#.#',
+  '#.#.##b##.#.#',
+  '#.k.#...#.k.#',
+  '#.#.##a##.#.#',
+  '#.#o..2..o#.#',
+  '#.###D#D###.#',
+  '#....E#E....#',
+  '#############']},
+ { n:'Великий скарб', hint:'Останнє випробування! Ключі, кнопки й кольори разом', m:[
+  '#############',
+  '#A.k.y#z.k.B#',
+  '#.##.y#z.##.#',
+  '#.#o.1#2.o#.#',
+  '#.####a####.#',
+  '#.....b.....#',
+  '###D#####D###',
+  '#o....k....o#',
+  '#.####D####.#',
+  '#.E.......E.#',
+  '#############']}
+];
+
+// =================== БРОДИЛКА ВДВОХ ===================
+// Командна гра: двоє героїв разом проходять лабіринти. Головний телефон рахує правила,
+// другий надсилає свої кнопки й малює отриманий стан.
+const MZ_COL = ['#f2c14e', '#5aa9e6'];
+const MZ = {
+  st: null, loop: null, raf: null, tick: 0, myD: -1, active2: 0, smooth: null, lastSent: '',
+  active(){ return !!this.st; },
+  stop(){ clearInterval(this.loop); this.loop = null; cancelAnimationFrame(this.raf); this.raf = null; this.st = null; this.smooth = null; this.myD = -1; },
+  leaveFree(){ return !this.st || this.st.over; },
+  isSim(){ return S.mode === 'local' || S.role === 'host'; },
+  meIdx(){ return S.mode === 'local' ? this.active2 : (S.role === 'client' ? 1 : 0); },
+  saved(){ try { return +localStorage.getItem('mz_level') || 0; } catch(e) { return 0; } },
+  save(n){ try { if (n > this.saved()) localStorage.setItem('mz_level', n); } catch(e) {} },
+
+  load(idx){
+    const L = MZ_LEVELS[idx], W = L.m[0].length, H = L.m.length;
+    let g = L.m.join(''), P = [];
+    for (const [k, ch] of [[0, 'A'], [1, 'B']]) {
+      const i = g.indexOf(ch);
+      P[k] = { x: i % W, y: (i / W) | 0, d: 2, cd: 0 };
+      g = g.slice(0, i) + '.' + g.slice(i + 1);
+    }
+    const coins = (g.match(/o/g) || []).length;
+    return { L: idx, W, H, g, base: g, P, keys: 0, coins: 0, coinsTotal: coins, ph: 'play', phT: 0, inp: [-1, -1], over: false };
+  },
+  fresh(mode, idx){ const s = this.load(idx); s.mode = mode; return s; },
+
+  // ---------- Старт ----------
+  startLocal(){ this.stop(); this.active2 = 0; this.st = this.fresh('local', Math.min(this.saved(), MZ_LEVELS.length - 1)); this.begin(); },
+  hostStart(opt){
+    this.stop();
+    const idx = opt === '1' ? 0 : Math.min(this.saved(), MZ_LEVELS.length - 1);
+    this.st = this.fresh('net', idx);
+    send({ t:'start', game:'mz', name: S.myName });
+    this.begin();
+  },
+  clientStart(){ this.stop(); this.st = this.fresh('net', 0); this.st.view = null; this.begin(); },
+  begin(){
+    this.myD = -1; this.smooth = null; this.lastSent = '';
+    enterGame(); this.resize();
+    if (this.isSim()) { this.tick = 0; this.loop = setInterval(() => this.step(1 / 30), 33); }
+    const frame = () => { this.draw(); this.raf = requestAnimationFrame(frame); };
+    this.raf = requestAnimationFrame(frame);
+  },
+  newRound(){
+    const mode = this.st ? this.st.mode : S.mode;
+    this.stop(); this.st = this.fresh(mode, 0); closeModal(); S.rematchAsked = false; this.begin();
+  },
+  restart(){
+    if (!this.st) return;
+    if (!this.isSim()) { send({ t:'mz_rs' }); return; }
+    const s = this.st, n = this.load(s.L);
+    Object.assign(s, { g: n.g, P: n.P, keys: 0, coins: 0, ph: 'play', inp: [-1, -1] });
+    this.smooth = null; toast('Рівень спочатку');
+  },
+
+  // ---------- Правила ----------
+  cell(s, x, y){ return x < 0 || y < 0 || x >= s.W || y >= s.H ? '#' : s.g[y * s.W + x]; },
+  pressed(s, plate){
+    const gate = plate === '1' ? 'a' : 'b';
+    return s.P.some(p => this.cell(s, p.x, p.y) === plate || s.base[p.y * s.W + p.x] === plate);
+  },
+  gateOpen(s, x, y){
+    const ch = this.cell(s, x, y);
+    if (ch !== 'a' && ch !== 'b') return true;
+    if (s.P.some(p => p.x === x && p.y === y)) return true;
+    return this.pressed(s, ch === 'a' ? '1' : '2');
+  },
+  tryMove(k, d){
+    const s = this.st, p = s.P[k], o = s.P[1 - k];
+    const nx = p.x + [0, 1, 0, -1][d], ny = p.y + [-1, 0, 1, 0][d];
+    p.d = d;
+    if (o.x === nx && o.y === ny) return false;
+    const ch = this.cell(s, nx, ny);
+    if (ch === '#') return false;
+    if (ch === 'y' && k !== 0) { if (k === this.meIdx()) this.bump('Сюди може лише жовтий герой'); return false; }
+    if (ch === 'z' && k !== 1) { if (k === this.meIdx()) this.bump('Сюди може лише синій герой'); return false; }
+    if ((ch === 'a' || ch === 'b') && !this.gateOpen(s, nx, ny)) { if (k === this.meIdx()) this.bump('Ґрати зачинені. Потрібно стати на кнопку'); return false; }
+    const i = ny * s.W + nx;
+    if (ch === 'D') {
+      if (s.keys <= 0) { if (k === this.meIdx()) this.bump('Двері зачинені. Знайдіть ключ 🔑'); return false; }
+      s.keys--; s.g = s.g.slice(0, i) + '.' + s.g.slice(i + 1); s.base = s.base.slice(0, i) + '.' + s.base.slice(i + 1);
+      NET.vibrate(60);
+    }
+    if (ch === 'k') { s.keys++; s.g = s.g.slice(0, i) + '.' + s.g.slice(i + 1); NET.vibrate(40); }
+    if (ch === 'o') { s.coins++; s.g = s.g.slice(0, i) + '.' + s.g.slice(i + 1); NET.vibrate(20); }
+    p.x = nx; p.y = ny;
+    return true;
+  },
+  bump(msg){ const n = Date.now(); if (n - (this.lastBump || 0) > 1500) { this.lastBump = n; toast(msg); } },
+  step(dt){
+    const s = this.st; if (!s) return;
+    this.tick++;
+    const paused = s.mode === 'net' && !S.connected;
+    if (!paused && !s.over) {
+      if (s.ph === 'win') {
+        s.phT -= dt;
+        if (s.phT <= 0) {
+          if (s.L + 1 >= MZ_LEVELS.length) { s.over = true; this.save(MZ_LEVELS.length - 1); setTimeout(() => this.showResult(), 300); }
+          else { const n = this.load(s.L + 1); Object.assign(s, n, { mode: s.mode }); this.smooth = null; this.save(s.L); }
+        }
+      } else {
+        for (let k = 0; k < 2; k++) {
+          const p = s.P[k];
+          p.cd = Math.max(0, p.cd - dt);
+          if (s.inp[k] >= 0 && p.cd <= 0) { this.tryMove(k, s.inp[k]); p.cd = 0.17; }
+        }
+        const onE = s.P.filter(p => s.base[p.y * s.W + p.x] === 'E').length;
+        if (onE === 2) { s.ph = 'win'; s.phT = 2.2; NET.vibrate(200); }
+      }
+    }
+    if (s.mode === 'net' && this.tick % 3 === 0) this.snapshot();
+  },
+
+  // ---------- Мережа ----------
+  snapshot(){
+    const s = this.st;
+    send({ t:'mz_s', L: s.L, g: s.g, b: s.base, P: s.P.map(p => [p.x, p.y, p.d]), k: s.keys, c: s.coins, ct: s.coinsTotal, ph: s.ph, ov: s.over ? 1 : 0 });
+  },
+  sendState(){ send({ t:'state', game:'mz', name: S.myName }); },
+  peerBack(){ if (this.st) this.st.inp[1] = -1; },
+  onState(){
+    if (!this.st) { this.st = this.fresh('net', 0); this.begin(); } else enterGame();
+    this.sendInput(); toast('Зв’язок відновлено');
+  },
+  onMsg(m){
+    const s = this.st; if (!s) return;
+    if (m.t === 'mz_in' && this.isSim()) s.inp[1] = m.d;
+    else if (m.t === 'mz_rs' && this.isSim()) this.restart();
+    else if (m.t === 'mz_s' && !this.isSim()) {
+      if (m.L !== s.L) this.smooth = null;
+      const L = MZ_LEVELS[m.L];
+      Object.assign(s, { L: m.L, W: L.m[0].length, H: L.m.length, g: m.g, base: m.b, keys: m.k, coins: m.c, coinsTotal: m.ct, ph: m.ph });
+      s.P = m.P.map(p => ({ x: p[0], y: p[1], d: p[2] }));
+      if (m.ov && !s.over) { s.over = true; this.save(MZ_LEVELS.length - 1); setTimeout(() => this.showResult(), 300); }
+      else this.save(m.L);
+    }
+  },
+
+  // ---------- Керування ----------
+  setDir(d){
+    if (d === this.myD) return;
+    this.myD = d;
+    if (this.isSim()) { const k = this.meIdx(); this.st.inp[k] = d; if (S.mode === 'local') this.st.inp[1 - k] = -1; if (d >= 0 && this.st.P[k].cd <= 0.05) this.st.P[k].cd = 0; }
+    else this.sendInput();
+  },
+  sendInput(){ if (!this.isSim()) send({ t:'mz_in', d: this.myD }); },
+  swap(){
+    if (S.mode !== 'local' || !this.st) return;
+    this.st.inp[this.active2] = -1; this.active2 = 1 - this.active2; this.myD = -1;
+    toast(this.active2 ? 'Тепер ходить синій герой' : 'Тепер ходить жовтий герой');
+  },
+  showResult(){
+    if (S.modalKind) return;
+    ask('result', 'Усі лабіринти пройдено! 🏆', `Ви разом пройшли ${MZ_LEVELS.length} рівнів. Справжня команда!`, [
+      { label:'Пройти знову', cls:'gold', fn: rematch }, { label:'В меню', fn: toMenu }]);
+  },
+
+  // ---------- Малювання ----------
+  resize(){
+    const c = $('mzCanvas'); if (!c || !this.st) return;
+    const s = this.st, maxW = window.innerWidth * 0.96, maxH = window.innerHeight * 0.56;
+    const cs = Math.floor(Math.min(maxW / s.W, maxH / s.H));
+    const dpr = window.devicePixelRatio || 1;
+    c.style.width = cs * s.W + 'px'; c.style.height = cs * s.H + 'px';
+    c.width = Math.round(cs * s.W * dpr); c.height = Math.round(cs * s.H * dpr);
+    this.dims = s.W + 'x' + s.H;
+  },
+  render(){ this.renderBar(); },
+  renderBar(){
+    const s = this.st, el = $('mzBar'); if (!s || !el) return;
+    const L = MZ_LEVELS[s.L];
+    const who = S.mode === 'local' ? `<button class="chip" data-mz="swap"><i style="background:${MZ_COL[this.active2]}"></i>Герой ⇄</button>` :
+      `<span class="chip"><i style="background:${MZ_COL[this.meIdx()]}"></i>Ти</span>`;
+    const html = `<div class="mzrow"><b>${s.L + 1}. ${esc(L.n)}</b><span>🔑 ${s.keys}</span><span>⭐ ${s.coins}/${s.coinsTotal}</span></div>` +
+      `<div class="mzrow"><small>${esc(L.hint)}</small></div>` +
+      `<div class="mzrow">${who}<button class="chip" data-mz="restart">🔄 Заново</button><button class="chip" data-mz="menu">☰ Меню</button></div>`;
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  },
+  draw(){
+    const s = this.st, c = $('mzCanvas'); if (!s || !c) return;
+    if (this.dims !== s.W + 'x' + s.H) this.resize();
+    this.renderBar();
+    const ctx = c.getContext && c.getContext('2d'); if (!ctx) return;
+    const cs = c.width / s.W;
+    ctx.fillStyle = '#3b2f25'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const emoji = (t, x, y, k) => { ctx.font = `${Math.round(cs * (k || .7))}px sans-serif`; ctx.fillText(t, x * cs + cs / 2, y * cs + cs / 2 + cs * .04); };
+    for (let y = 0; y < s.H; y++) for (let x = 0; x < s.W; x++) {
+      const ch = s.g[y * s.W + x], base = s.base[y * s.W + x], X = x * cs, Y = y * cs;
+      if (ch === '#') {
+        ctx.fillStyle = '#6b5240'; ctx.fillRect(X, Y, cs, cs);
+        ctx.fillStyle = '#7d6250'; ctx.fillRect(X, Y, cs, cs * .25);
+        continue;
+      }
+      ctx.fillStyle = base === 'y' ? '#f7dd8a' : base === 'z' ? '#a9d4f3' : '#eadfc6';
+      ctx.fillRect(X, Y, cs, cs);
+      ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.strokeRect(X + .5, Y + .5, cs - 1, cs - 1);
+      if (base === 'E') { ctx.fillStyle = '#9fd8a6'; ctx.fillRect(X, Y, cs, cs); emoji('🏁', x, y); }
+      if (base === '1' || base === '2') {
+        const on = this.pressed(s, base);
+        ctx.fillStyle = base === '1' ? '#d9534f' : '#8e5bd6';
+        ctx.beginPath(); ctx.arc(X + cs / 2, Y + cs / 2 + (on ? cs * .04 : 0), cs * (on ? .3 : .34), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(X + cs / 2, Y + cs * .44, cs * .14, 0, Math.PI * 2); ctx.fill();
+      }
+      if (ch === 'a' || ch === 'b') {
+        const open = this.gateOpen(s, x, y);
+        ctx.strokeStyle = ch === 'a' ? '#d9534f' : '#8e5bd6'; ctx.lineWidth = cs * .1;
+        ctx.globalAlpha = open ? .25 : 1;
+        ctx.beginPath();
+        for (const f of [.2, .5, .8]) { ctx.moveTo(X + cs * f, Y + cs * .08); ctx.lineTo(X + cs * f, Y + cs * .92); }
+        ctx.moveTo(X + cs * .08, Y + cs * .5); ctx.lineTo(X + cs * .92, Y + cs * .5);
+        ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      if (ch === 'D') { ctx.fillStyle = '#9a6a3a'; ctx.fillRect(X + cs * .1, Y + cs * .05, cs * .8, cs * .9); emoji('🔒', x, y, .5); }
+      if (ch === 'k') emoji('🔑', x, y);
+      if (ch === 'o') emoji('⭐', x, y, .6);
+    }
+    // герої (плавно)
+    if (!this.smooth) this.smooth = s.P.map(p => ({ x: p.x, y: p.y }));
+    s.P.forEach((p, k) => {
+      const sm = this.smooth[k];
+      sm.x += (p.x - sm.x) * .35; sm.y += (p.y - sm.y) * .35;
+      const X = sm.x * cs + cs / 2, Y = sm.y * cs + cs / 2, r = cs * .38;
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(X, Y + r * .8, r * .8, r * .3, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = MZ_COL[k]; ctx.beginPath(); ctx.arc(X, Y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#2a1d08'; ctx.lineWidth = Math.max(1.5, cs * .05); ctx.stroke();
+      const ex = [0, 1, 0, -1][p.d] * r * .25, ey = [-1, 0, 1, 0][p.d] * r * .25;
+      ctx.fillStyle = '#fff';
+      for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(X + sx * r * .35 + ex, Y - r * .1 + ey, r * .22, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#1b1b1b';
+      for (const sx of [-1, 1]) { ctx.beginPath(); ctx.arc(X + sx * r * .35 + ex * 1.4, Y - r * .1 + ey * 1.4, r * .1, 0, Math.PI * 2); ctx.fill(); }
+      if (k === this.meIdx()) { ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = Math.max(1, cs * .04); ctx.beginPath(); ctx.arc(X, Y, r * 1.25, 0, Math.PI * 2); ctx.stroke(); }
+    });
+    let msg = '';
+    if (s.ph === 'win' && !s.over) msg = s.L + 1 >= MZ_LEVELS.length ? 'Скарб знайдено! 🏆' : 'Рівень пройдено! 🎉';
+    else if (S.mode === 'net' && !S.connected) msg = 'Немає зв’язку';
+    if (msg) {
+      ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, c.height / 2 - cs * .8, c.width, cs * 1.6);
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(cs * .7)}px system-ui, sans-serif`;
+      ctx.fillText(msg, c.width / 2, c.height / 2);
+    }
+  }
+};
+
+// =================== ГОНКИ ===================
+// Вид згори, 3 кола. Машинка їде сама, гравець лише кермує (◀ ▶) і за потреби гальмує.
+// Хто з'їхав на траву — сповільнюється; жовті стрілки на трасі дають прискорення.
+const RC_W = 100, RC_H = 130, RC_TRACK = 15, RC_LAPS = 3;
+const RC_TRACKS = {
+  1: { n:'Овал', pts:[[22,18],[78,18],[90,35],[90,95],[78,112],[22,112],[10,95],[10,35]] },
+  2: { n:'Квасоля', pts:[[20,15],[80,15],[92,35],[86,58],[62,64],[62,72],[86,80],[92,103],[80,118],[20,118],[8,98],[8,35]] },
+  3: { n:'Змійка', pts:[[16,12],[84,12],[92,30],[92,104],[84,120],[62,120],[52,104],[42,90],[24,86],[12,70],[24,55],[42,50],[46,32]] }
+};
+const RC_COL = ['#f2c14e', '#5aa9e6'];
+
+// Згладжена траса: сплайн Катмулла-Рома по контрольних точках
+function rcBuild(id){
+  const P = RC_TRACKS[id].pts, n = P.length, out = [];
+  for (let i = 0; i < n; i++) {
+    const p0 = P[(i - 1 + n) % n], p1 = P[i], p2 = P[(i + 1) % n], p3 = P[(i + 2) % n];
+    for (let k = 0; k < 24; k++) {
+      const t = k / 24, t2 = t * t, t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  const N = out.length, cps = [];
+  for (let i = 0; i < N; i += Math.floor(N / 16)) cps.push(i);
+  const boosts = [Math.floor(N * 0.3), Math.floor(N * 0.72)];
+  // декор: дерева й кущі там, де немає траси
+  let seed = id * 9301 + 49297; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const deco = [];
+  for (let t = 0; t < 200 && deco.length < 22; t++) {
+    const x = 4 + rnd() * 92, y = 4 + rnd() * 122;
+    if (rcDist(out, x, y).d > RC_TRACK * 0.9) deco.push([x, y, rnd() < .6 ? '🌳' : rnd() < .5 ? '🌲' : '🌼']);
+  }
+  return { pts: out, N, cps, boosts, deco };
+}
+function rcDist(pts, x, y){
+  let best = 1e9, bi = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy || 1;
+    let t = ((x - a[0]) * dx + (y - a[1]) * dy) / L; t = Math.max(0, Math.min(1, t));
+    const px = a[0] + dx * t, py = a[1] + dy * t, d = (x - px) ** 2 + (y - py) ** 2;
+    if (d < best) { best = d; bi = i; }
+  }
+  return { d: Math.sqrt(best), i: bi };
+}
+
+const RC = {
+  st: null, tr: null, loop: null, raf: null, tick: 0, my: { s: 0, b: 0 }, smooth: null,
+  active(){ return !!this.st; },
+  stop(){ clearInterval(this.loop); this.loop = null; cancelAnimationFrame(this.raf); this.raf = null; this.st = null; this.smooth = null; this.my = { s: 0, b: 0 }; },
+  leaveFree(){ return !this.st || !!this.st.win || this.st.ph === 'count'; },
+  isSim(){ return S.mode === 'local' || S.role === 'host'; },
+  meIdx(){ return S.mode === 'net' && S.role === 'client' ? 1 : 0; },
+
+  fresh(mode, track){
+    const tr = this.tr = rcBuild(track);
+    const i0 = 3, a = tr.pts[i0], b = tr.pts[i0 + 1];
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), nx = -Math.sin(ang), ny = Math.cos(ang);
+    const car = s => ({ x: a[0] + nx * s * RC_TRACK * .22, y: a[1] + ny * s * RC_TRACK * .22, a: ang, v: 0, lap: 0, cp: 1, boost: 0, fin: 0 });
+    return { mode, track, cars: [car(-1), car(1)], inp: [{ s: 0, b: 0 }, { s: 0, b: 0 }], ph: 'count', cd: 3.5, win: null, t: 0 };
+  },
+  startLocal(){ this.stop(); this.st = this.fresh('local', 1 + Math.floor(Math.random() * 3)); this.begin(); },
+  hostStart(track){
+    this.stop(); this.st = this.fresh('net', RC_TRACKS[track] ? track : 1);
+    send({ t:'start', game:'rc', track: this.st.track, name: S.myName });
+    this.begin();
+  },
+  clientStart(m){ this.stop(); this.st = this.fresh('net', m.track || 1); this.st.view = null; this.begin(); },
+  begin(){
+    this.smooth = null; this.my = { s: 0, b: 0 };
+    enterGame(); this.resize();
+    if (this.isSim()) { this.tick = 0; this.loop = setInterval(() => this.step(1 / 30), 33); }
+    const frame = () => { this.draw(); this.raf = requestAnimationFrame(frame); };
+    this.raf = requestAnimationFrame(frame);
+  },
+  newRound(){
+    const tr = this.st ? this.st.track : 1, mode = this.st ? this.st.mode : S.mode;
+    this.stop(); this.st = this.fresh(mode, mode === 'local' ? 1 + Math.floor(Math.random() * 3) : tr);
+    closeModal(); S.rematchAsked = false; this.begin();
+  },
+
+  // ---------- Фізика ----------
+  step(dt){
+    const s = this.st; if (!s) return;
+    this.tick++;
+    const paused = s.mode === 'net' && !S.connected;
+    if (!paused && !s.win) {
+      if (s.ph === 'count') { s.cd -= dt; if (s.cd <= 0.5) s.ph = 'race'; }
+      if (s.ph === 'race') { s.t += dt; if (s.mode === 'local') this.bot(); for (let k = 0; k < 2; k++) this.drive(k, dt); this.collide(); }
+    }
+    if (s.mode === 'net' && this.tick % 2 === 0) this.snapshot();
+  },
+  drive(k, dt){
+    const s = this.st, c = s.cars[k], inp = s.inp[k], tr = this.tr;
+    if (c.fin) { c.v = Math.max(0, c.v - 30 * dt); }
+    const near = rcDist(tr.pts, c.x, c.y);
+    const off = near.d > RC_TRACK / 2;
+    c.boost = Math.max(0, c.boost - dt);
+    for (const bi of tr.boosts) { const p = tr.pts[bi]; if (Math.hypot(p[0] - c.x, p[1] - c.y) < 5) c.boost = 1.4; }
+    let vmax = off ? 13 : 30;
+    if (c.boost > 0 && !off) vmax = 42;
+    if (k === 1 && s.mode === 'local') vmax *= 0.9;
+    if (!c.fin) {
+      if (inp.b) c.v -= 45 * dt;
+      else if (c.v < vmax) c.v += (c.boost > 0 ? 40 : 20) * dt;
+      if (c.v > vmax) c.v -= 55 * dt;
+    }
+    c.v = Math.max(0, c.v);
+    c.a += inp.s * 2.7 * dt * Math.min(1, c.v / 12 + 0.25);
+    c.x = Math.max(2, Math.min(RC_W - 2, c.x + Math.cos(c.a) * c.v * dt));
+    c.y = Math.max(2, Math.min(RC_H - 2, c.y + Math.sin(c.a) * c.v * dt));
+    // контрольні точки по черзі; повне коло — коли повернувся на старт
+    const cpi = tr.cps[c.cp];
+    const cp = tr.pts[cpi];
+    if (Math.hypot(cp[0] - c.x, cp[1] - c.y) < RC_TRACK * 0.85) {
+      if (c.cp === 0) {
+        c.lap++;
+        if (c.lap >= RC_LAPS && !c.fin) {
+          c.fin = s.t;
+          if (!s.win) { s.win = { w: k }; setTimeout(() => this.showResult(), 1500); }
+        }
+      }
+      c.cp = (c.cp + 1) % tr.cps.length;
+    }
+  },
+  collide(){
+    const [a, b] = this.st.cars, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    if (d < 3.6 && d > 0.01) {
+      const push = (3.6 - d) / 2, ux = dx / d, uy = dy / d;
+      a.x -= ux * push; a.y -= uy * push; b.x += ux * push; b.y += uy * push;
+      a.v *= 0.92; b.v *= 0.92;
+    }
+  },
+  bot(){
+    const s = this.st, c = s.cars[1], tr = this.tr, inp = s.inp[1];
+    const near = rcDist(tr.pts, c.x, c.y);
+    const tgt = tr.pts[(near.i + 9) % tr.N];
+    let want = Math.atan2(tgt[1] - c.y, tgt[0] - c.x) - c.a;
+    while (want > Math.PI) want -= 2 * Math.PI;
+    while (want < -Math.PI) want += 2 * Math.PI;
+    inp.s = want > 0.08 ? 1 : want < -0.08 ? -1 : 0;
+    inp.b = Math.abs(want) > 1.1 && c.v > 18 ? 1 : 0;
+  },
+  progress(c){
+    const tr = this.tr, prev = tr.cps[(c.cp - 1 + tr.cps.length) % tr.cps.length];
+    return c.lap * 1000 + ((c.cp - 1 + tr.cps.length) % tr.cps.length) * 10 + (c.cp === 0 ? 9 : 0) + (prev ? 0 : 0);
+  },
+
+  // ---------- Мережа ----------
+  r1: v => Math.round(v * 10) / 10,
+  snapshot(){
+    const s = this.st;
+    send({ t:'rc_s', C: s.cars.map(c => [this.r1(c.x), this.r1(c.y), Math.round(c.a * 100) / 100, c.lap, c.cp, c.boost > 0 ? 1 : 0, c.fin ? 1 : 0]),
+           ph: s.ph, cd: this.r1(s.cd), w: s.win ? s.win.w : -1, tr: s.track });
+  },
+  sendState(){ send({ t:'state', game:'rc', track: this.st.track, name: S.myName }); },
+  peerBack(){ if (this.st) this.st.inp[1] = { s: 0, b: 0 }; },
+  onState(m){
+    if (!this.st) { this.st = this.fresh('net', m.track || 1); this.begin(); } else enterGame();
+    this.sendInput(); toast('Зв’язок відновлено');
+  },
+  onMsg(m){
+    const s = this.st; if (!s) return;
+    if (m.t === 'rc_in' && this.isSim()) s.inp[1] = { s: m.s, b: m.b };
+    else if (m.t === 'rc_s' && !this.isSim()) {
+      if (m.tr !== s.track) { s.track = m.tr; this.tr = rcBuild(m.tr); }
+      s.view = m; s.ph = m.ph; s.cd = m.cd;
+      m.C.forEach((c, k) => Object.assign(s.cars[k], { lap: c[3], cp: c[4], fin: c[6] }));
+      if (m.w >= 0 && !s.win) { s.win = { w: m.w }; setTimeout(() => this.showResult(), 1500); }
+    }
+  },
+
+  // ---------- Керування ----------
+  setInput(sv, bv){
+    if (sv !== undefined) this.my.s = sv;
+    if (bv !== undefined) this.my.b = bv;
+    if (!this.st) return;
+    if (this.isSim()) this.st.inp[0] = { s: this.my.s, b: this.my.b };
+    else this.sendInput();
+  },
+  sendInput(){ if (!this.isSim()) send({ t:'rc_in', s: this.my.s, b: this.my.b }); },
+  showResult(){
+    const s = this.st; if (!s || !s.win || S.modalKind) return;
+    const win = s.win.w === this.meIdx();
+    const opp = S.mode === 'local' ? 'Комп’ютер' : S.oppName;
+    ask('result', win ? 'Перемога! 🏆' : `Першим фінішував ${esc(opp)}`,
+        `Траса «${RC_TRACKS[s.track].n}», ${RC_LAPS} кола. Час: ${Math.round(s.t || 0)} с`, [
+      { label:'Ще гонка', cls:'gold', fn: rematch }, { label:'В меню', fn: toMenu }]);
+  },
+
+  // ---------- Малювання ----------
+  resize(){
+    const c = $('rcCanvas'); if (!c) return;
+    const h = Math.min(window.innerHeight * 0.6, window.innerWidth * 0.96 * RC_H / RC_W), w = h * RC_W / RC_H;
+    const dpr = window.devicePixelRatio || 1;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  },
+  render(){ this.renderBar(); },
+  renderBar(){
+    const s = this.st, el = $('rcBar'); if (!s || !el) return;
+    const me = this.meIdx(), cars = s.cars;
+    const names = S.mode === 'local' ? ['Ти', 'Комп’ютер'] : (me === 0 ? [S.myName, S.oppName] : [S.oppName, S.myName]);
+    const lap = c => Math.min(RC_LAPS, c.lap + 1);
+    const html = cars.map((c, k) => `<span class="tkp ${k ? 'r' : ''}"><i style="background:${RC_COL[k]}"></i>${esc(names[k])} · ${c.fin ? '🏁' : 'коло ' + lap(c) + '/' + RC_LAPS}</span>`).join('<b>VS</b>');
+    if (el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; }
+  },
+  carsNow(){
+    const s = this.st;
+    if (this.isSim()) return s.cars.map(c => [c.x, c.y, c.a, c.boost > 0 ? 1 : 0]);
+    const v = s.view; if (!v) return null;
+    if (!this.smooth) this.smooth = v.C.map(c => c.slice());
+    v.C.forEach((c, k) => {
+      const sm = this.smooth[k];
+      if (Math.hypot(sm[0] - c[0], sm[1] - c[1]) > 15) { sm[0] = c[0]; sm[1] = c[1]; sm[2] = c[2]; }
+      sm[0] += (c[0] - sm[0]) * .35; sm[1] += (c[1] - sm[1]) * .35;
+      let da = c[2] - sm[2]; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+      sm[2] += da * .4; sm[5] = c[5];
+    });
+    return this.smooth.map(c => [c[0], c[1], c[2], c[5]]);
+  },
+  draw(){
+    const s = this.st, c = $('rcCanvas'); if (!s || !c) return;
+    this.renderBar();
+    const ctx = c.getContext && c.getContext('2d'); if (!ctx) return;
+    const k = c.width / RC_W, tr = this.tr;
+    ctx.fillStyle = '#4f8a3c'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `${Math.round(k * 6)}px sans-serif`;
+    for (const d of tr.deco) ctx.fillText(d[2], d[0] * k, d[1] * k);
+    const path = () => { ctx.beginPath(); tr.pts.forEach((p, i) => i ? ctx.lineTo(p[0] * k, p[1] * k) : ctx.moveTo(p[0] * k, p[1] * k)); ctx.closePath(); };
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    path(); ctx.strokeStyle = '#e9e2d0'; ctx.lineWidth = (RC_TRACK + 2) * k; ctx.stroke();
+    path(); ctx.strokeStyle = '#d9534f'; ctx.setLineDash([3 * k, 3 * k]); ctx.lineWidth = (RC_TRACK + 2) * k; ctx.stroke(); ctx.setLineDash([]);
+    path(); ctx.strokeStyle = '#5b6166'; ctx.lineWidth = RC_TRACK * k; ctx.stroke();
+    path(); ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.setLineDash([2.5 * k, 3.5 * k]); ctx.lineWidth = .5 * k; ctx.stroke(); ctx.setLineDash([]);
+    // старт / фініш
+    const p0 = tr.pts[tr.cps[0]], p1 = tr.pts[tr.cps[0] + 1];
+    const ang = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+    ctx.save(); ctx.translate(p0[0] * k, p0[1] * k); ctx.rotate(ang);
+    const sq = RC_TRACK / 6;
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) {
+      ctx.fillStyle = (i + j) % 2 ? '#111' : '#fff';
+      ctx.fillRect((j - 1) * sq * k, (-RC_TRACK / 2 + i * sq) * k, sq * k, sq * k);
+    }
+    ctx.restore();
+    // прискорювачі
+    for (const bi of tr.boosts) {
+      const a = tr.pts[bi], b = tr.pts[(bi + 1) % tr.N], an = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      ctx.save(); ctx.translate(a[0] * k, a[1] * k); ctx.rotate(an);
+      ctx.fillStyle = '#ffd34d';
+      for (const off of [-2.5, 1]) { ctx.beginPath(); ctx.moveTo((off) * k, -3 * k); ctx.lineTo((off + 3) * k, 0); ctx.lineTo(off * k, 3 * k); ctx.lineTo((off + 1.2) * k, 0); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+    const cars = this.carsNow();
+    if (cars) cars.forEach((cr, i) => this.drawCar(ctx, cr[0] * k, cr[1] * k, cr[2], k, RC_COL[i], i === this.meIdx(), cr[3]));
+    let msg = '';
+    const cd = s.cd;
+    if (s.win) msg = s.win.w === this.meIdx() ? 'Перемога! 🏆' : 'Фініш!';
+    else if (S.mode === 'net' && !S.connected) msg = 'Немає зв’язку';
+    else if (s.ph === 'count') msg = cd > 2.5 ? '3' : cd > 1.5 ? '2' : cd > 0.5 ? '1' : 'Старт!';
+    if (msg) {
+      ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, c.height / 2 - 9 * k, c.width, 18 * k);
+      ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(11 * k)}px system-ui, sans-serif`;
+      ctx.fillText(msg, c.width / 2, c.height / 2);
+    }
+  },
+  drawCar(ctx, x, y, a, k, col, mine, boost){
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    if (boost) { ctx.fillStyle = 'rgba(255,170,40,.8)'; ctx.beginPath(); ctx.moveTo(-2.6 * k, -.8 * k); ctx.lineTo(-5 * k, 0); ctx.lineTo(-2.6 * k, .8 * k); ctx.fill(); }
+    ctx.fillStyle = '#1e1e1e';
+    for (const [dx, dy] of [[-1.3, -1.25], [1.3, -1.25], [-1.3, 1.25], [1.3, 1.25]]) ctx.fillRect((dx - .55) * k, (dy - .3) * k, 1.1 * k, .6 * k);
+    ctx.fillStyle = col; ctx.fillRect(-2.2 * k, -1.1 * k, 4.4 * k, 2.2 * k);
+    ctx.fillStyle = '#bfe3f7'; ctx.fillRect(.5 * k, -.8 * k, 1 * k, 1.6 * k);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-1.6 * k, -.8 * k, 1.6 * k, 1.6 * k);
+    ctx.restore();
+    if (mine) { ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = .4 * k; ctx.beginPath(); ctx.arc(x, y, 3.6 * k, 0, Math.PI * 2); ctx.stroke(); }
+  }
+};
+
+// Керування гонками: утримання кнопок
+(function(){
+  const hold = (id, on, off) => {
+    const b = $(id);
+    b.addEventListener('pointerdown', e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch(x) {} b.classList.add('on'); on(); });
+    const up = () => { b.classList.remove('on'); off(); };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+  };
+  hold('rcL', () => RC.setInput(-1), () => { if (RC.my.s === -1) RC.setInput(0); });
+  hold('rcR', () => RC.setInput(1), () => { if (RC.my.s === 1) RC.setInput(0); });
+  hold('rcB', () => RC.setInput(undefined, 1), () => RC.setInput(undefined, 0));
+  $('rcMenu').onclick = () => confirmLeave();
+  window.addEventListener('resize', () => { if (RC.st) RC.resize(); if (MZ.st) MZ.resize(); });
+  // Бродилка: джойстик як у танчиках
+  const pad = $('mzPad'), knob = $('mzKnob'); let pid = null;
+  const upd = e => {
+    const r = pad.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const lim = r.width * 0.32, len = Math.hypot(dx, dy) || 1, k = Math.min(1, lim / len);
+    knob.style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+    if (len < r.width * 0.12) { MZ.setDir(-1); return; }
+    MZ.setDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+  };
+  const end = e => { if (e.pointerId !== pid) return; pid = null; knob.style.transform = ''; MZ.setDir(-1); };
+  pad.addEventListener('pointerdown', e => { pid = e.pointerId; try { pad.setPointerCapture(pid); } catch(x) {} upd(e); e.preventDefault(); });
+  pad.addEventListener('pointermove', e => { if (e.pointerId === pid) upd(e); });
+  pad.addEventListener('pointerup', end); pad.addEventListener('pointercancel', end);
+  $('mzBar').addEventListener('click', e => {
+    const b = e.target.closest('[data-mz]'); if (!b) return;
+    if (b.dataset.mz === 'swap') MZ.swap();
+    else if (b.dataset.mz === 'restart') MZ.restart();
+    else if (b.dataset.mz === 'menu') confirmLeave();
+  });
 })();
 
 // ---------- Кнопка «Назад» на телефоні ----------
