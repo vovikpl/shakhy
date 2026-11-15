@@ -29,7 +29,12 @@ import android.content.Context;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.view.View;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.graphics.Color;
+import android.window.OnBackInvokedDispatcher;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -61,8 +66,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Шахи по Wi-Fi.
- * Гра (дошка, правила, інтерфейс) живе в assets/index.html.
+ * Pair Play / Ігри вдвох.
+ * Ігри (правила, інтерфейс, переклад) живуть в assets/index.html.
  * Цей клас відповідає лише за мережу:
  *  - "Створити гру": відкриває TCP-порт 50505 і щосекунди кричить у мережу (UDP 50506) "тут є гра";
  *  - "Приєднатися": слухає UDP 50506, показує знайдені ігри, підключається по TCP.
@@ -101,7 +106,42 @@ public class MainActivity extends Activity {
         ws.setTextZoom(100);
         web.setWebViewClient(new WebViewClient());
         web.addJavascriptInterface(new Bridge(), "Android");
-        setContentView(web);
+        // Android 15+ малює застосунок під статус-баром і панеллю навігації:
+        // беремо це під контроль на всіх версіях і відступаємо на розмір системних панелей
+        final int felt = Color.parseColor("#1E3B2F");
+        web.setBackgroundColor(felt);
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(felt);
+        root.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
+        if (Build.VERSION.SDK_INT < 35) {
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+            getWindow().setNavigationBarColor(Color.TRANSPARENT);
+        }
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int l, t, r, b;
+            if (Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars()
+                    | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                l = i.left; t = i.top; r = i.right; b = i.bottom;
+            } else {
+                l = insets.getSystemWindowInsetLeft(); t = insets.getSystemWindowInsetTop();
+                r = insets.getSystemWindowInsetRight(); b = insets.getSystemWindowInsetBottom();
+            }
+            v.setPadding(l, t, r, b);
+            return insets;
+        });
+        setContentView(root);
+        // Кнопка «Назад»: на Android 13+ через новий механізм (на Android 16 старий onBackPressed не викликається)
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                () -> { if (web != null) web.evaluateJavascript("onBack()", null); });
+        }
         web.loadUrl("file:///android_asset/index.html");
         try {
             tts = new TextToSpeech(this, status -> {

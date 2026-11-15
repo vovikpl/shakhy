@@ -268,6 +268,13 @@ details summary{padding:6px 2px}
 .fire{width:min(28vw,104px);aspect-ratio:1;border-radius:50%;background:#c9483a;font-size:40px;box-shadow:0 5px 0 #8a2c22;touch-action:none}
 .fire:active{transform:translateY(3px);box-shadow:0 2px 0 #8a2c22}
 .tkside .btn{padding:8px 12px;font-size:14px}
+.langbtn{position:absolute;top:10px;right:10px;padding:6px 10px;border-radius:10px;background:var(--felt-2);border:2px solid var(--felt-3);font-size:13px;color:var(--muted)}
+/* Аерохокей */
+#ahgame{padding:0;justify-content:center}
+#ahCanvas{position:absolute;inset:0;touch-action:none}
+.ahmenu{position:absolute;left:6px;top:50%;transform:translateY(-50%);z-index:2;width:42px;height:42px;border-radius:50%;
+  background:rgba(30,59,47,.88);border:2px solid var(--felt-3);font-size:18px}
+#ahgame .bannerSlot{display:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -275,6 +282,7 @@ details summary{padding:6px 2px}
 
 <!-- МЕНЮ -->
 <section id="menu" class="screen on">
+  <button class="langbtn" id="langBtn"></button>
   <div class="hero"><span class="knight" id="heroIc">♞</span><h1 id="heroTitle">Шахи</h1></div>
   <div class="games" id="gameSeg">
     <button data-g="chess" class="on"><span>♞</span>Шахи</button>
@@ -283,6 +291,7 @@ details summary{padding:6px 2px}
     <button data-g="tk"><span>🎯</span>Танчики</button>
     <button data-g="rc"><span>🏎️</span>Гонки</button>
     <button data-g="mz"><span>🗺️</span>Бродилка</button>
+    <button data-g="ah"><span>🏒</span>Аерохокей</button>
   </div>
   <div class="field">
     <label for="name">Як тебе звати?</label>
@@ -291,6 +300,7 @@ details summary{padding:6px 2px}
   <button class="big primary" id="bNear"><span class="ic">🤝</span><span><b>Грати з другом поруч</b><small>Через Bluetooth, без Wi-Fi та інтернету</small></span></button>
   <button class="big" id="bWifi"><span class="ic">📶</span><span><b>Грати по Wi-Fi</b><small>Обидва телефони в одній мережі</small></span></button>
   <button class="big" id="bLocal"><span class="ic" id="localIc">📱</span><span><b id="localTitle">Грати вдвох на цьому телефоні</b><small id="localSub">Передавайте телефон по черзі</small></span></button>
+  <button class="big" id="bBot" style="display:none"><span class="ic">🤖</span><span><b>Грати з комп’ютером</b><small>Ти знизу, бот зверху</small></span></button>
 </section>
 
 <!-- ВИБІР: СТВОРИТИ ЧИ ПРИЄДНАТИСЯ -->
@@ -404,9 +414,201 @@ details summary{padding:6px 2px}
   </div>
 </section>
 
+<!-- АЕРОХОКЕЙ -->
+<section id="ahgame" class="screen">
+  <div class="bannerSlot"></div>
+  <canvas id="ahCanvas"></canvas>
+  <button class="ahmenu" id="ahMenu" aria-label="Меню">☰</button>
+</section>
+
 <div id="modal"><div class="card" id="card"></div></div>
 <div id="toast"></div>
 
+<script>
+// ---------- Мова інтерфейсу: українська або англійська (для всього світу) ----------
+const LANG = (() => {
+  try { const v = localStorage.getItem('igry_lang'); if (v === 'uk' || v === 'en') return v; } catch(e) {}
+  return /^uk/i.test(navigator.language || '') ? 'uk' : 'en';
+})();
+const I18N_SRC = {
+  // назви й меню
+  'Ігри вдвох':'Pair Play', 'Шахи':'Chess', 'Морський бій':'Sea Battle', 'Англійська':'English', 'Танчики':'Tanks',
+  'Гонки':'Racing', 'Бродилка':'Maze Quest', 'Аерохокей':'Air Hockey',
+  'шахи':'chess', 'морський бій':'sea battle', 'англійська':'english', 'танчики':'tanks', 'гонки':'racing',
+  'бродилка':'maze quest', 'аерохокей':'air hockey', 'Гра':'Game',
+  'Як тебе звати?':"What's your name?", "Ім'я":'Name', 'Гравець':'Player', 'Суперник':'Opponent',
+  'Грати з другом поруч':'Play with a friend nearby', 'Через Bluetooth, без Wi-Fi та інтернету':'Via Bluetooth, no Wi-Fi or internet needed',
+  'Грати по Wi-Fi':'Play over Wi-Fi', 'Обидва телефони в одній мережі':'Both phones on the same network',
+  'Грати вдвох на цьому телефоні':'2 players on this phone', 'Передавайте телефон по черзі':'Pass the phone back and forth',
+  "Грати з комп'ютером":'Play vs computer', 'Ти знизу, бот зверху':"You're at the bottom, the bot is on top",
+  'Гра з другом поруч':'Play with a friend nearby', 'Створити гру':'Create game', 'Друг приєднається до тебе':'Your friend will join you',
+  'Приєднатися до гри':'Join game', 'Знайти гру на телефоні друга':"Find the game on your friend's phone", 'Назад':'Back',
+  'Нова гра':'New game', 'Я граю за':'I play as', 'Чекаю на суперника…':'Waiting for an opponent…',
+  'Попроси його натиснути «Приєднатися до гри»':'Ask them to tap “Join game”', 'Адреса цього телефона:':"This phone's address:",
+  'Знадобиться, якщо інший телефон не знайде гру сам.':"You'll need it if the other phone can't find the game by itself.",
+  'Тримайте телефони поруч, на відстані кількох метрів.':'Keep the phones close, within a few meters.',
+  'Скасувати':'Cancel', 'Пошук ігор':'Find games', 'Шукаю ігри…':'Looking for games…', 'Ввести адресу вручну':'Enter address manually',
+  'Підключитися':'Connect', '☰ Меню':'☰ Menu', 'Меню':'Menu', 'Гальмо':'Brake',
+  // налаштування ігор
+  'Якщо друга немає поруч':'When no friend is around', '⚪ Білих':'⚪ White', '⚫ Чорних':'⚫ Black', '🎲 Навмання':'🎲 Random',
+  'Кольори поміняються.':'Colors will switch.', 'Першим стріляє':'Shoots first', '🙋 Я':'🙋 Me', '🧒 Друг':'🧒 Friend',
+  'Першим стрілятиме інший гравець.':'The other player will shoot first.', "Гонка з комп'ютером":'Race vs computer',
+  '3 кола проти бота':'3 laps against a bot', 'Траса':'Track', '🏟️ Овал':'🏟️ Oval', '🫘 Квасоля':'🫘 Bean', '🐍 Змійка':'🐍 Snake',
+  'Овал':'Oval', 'Квасоля':'Bean', 'Змійка':'Snake', 'Нова гонка на тій самій трасі.':'A new race on the same track.',
+  'Грати самому за двох':'Play both heroes yourself', 'Перемикайся між героями':'Switch between heroes', 'Почати з':'Start from',
+  '▶ Продовжити':'▶ Continue', '🔁 Першого рівня':'🔁 Level 1', 'Почнемо з першого рівня.':"We'll start from level 1.",
+  'Танк проти бота':'Your tank vs a bot', 'Бій до':'Play to', '3 перемог':'3 wins', '5 перемог':'5 wins', '10 перемог':'10 wins',
+  'Рахунок почнеться з нуля.':'The score will reset.', 'Екран навпіл, у кожного своя бита':'Split screen, one mallet each',
+  // підключення
+  'Увімкніть Bluetooth на обох телефонах. Один створює гру, другий приєднується.':'Turn on Bluetooth on both phones. One creates a game, the other joins.',
+  'Обидва телефони мають бути в одній Wi-Fi мережі. Інтернет не потрібен.':'Both phones must be on the same Wi-Fi network. No internet needed.',
+  'Не працює на цьому телефоні':"Doesn't work on this phone",
+  'Для гри поруч потрібні сервіси Google Play, а їх тут немає. Спробуйте «Грати по Wi-Fi» або точку доступу.':"Playing nearby needs Google Play services, which this phone doesn't have. Try “Play over Wi-Fi” or a hotspot.",
+  'Зрозуміло':'OK', 'Увімкни Bluetooth':'Turn on Bluetooth', 'Без Bluetooth телефони не знайдуть один одного.':"Without Bluetooth the phones can't find each other.",
+  'Відкрити налаштування':'Open settings', 'Увімкни геолокацію':'Turn on location',
+  'На цьому телефоні Android шукає пристрої поруч тільки з увімкненою геолокацією.':'On this phone, Android can only find nearby devices with location turned on.',
+  'Потрібен дозвіл':'Permission needed',
+  'Щоб знайти телефон друга поруч, Android просить дозвіл на пристрої поблизу (на старих телефонах — на геолокацію). Гра не стежить за місцем, це вимога Bluetooth-пошуку.':"To find your friend's phone, Android asks for the Nearby devices permission (Location on older phones). The game doesn't track where you are; Bluetooth search requires it.",
+  'Не вийшло':"Didn't work", 'Ще раз':'Again', 'Ще раз?':'Play again?',
+  'Шукаю ігри поруч…':'Looking for nearby games…', 'Шукаю ігри в цій мережі…':'Looking for games on this network…',
+  'Гри поки не видно. Перевір, що на телефоні друга відкрито «Створити гру», на обох увімкнено Bluetooth і телефони лежать поруч.':'No games yet. Check that your friend has “Create game” open, Bluetooth is on on both phones, and the phones are close together.',
+  'Гри поки не видно. Перевір, що на іншому телефоні відкрито «Створити гру» і обидва телефони в одній Wi-Fi мережі. Гостьові мережі роутера часто не пускають телефони один до одного.':'No games yet. Check that the other phone has “Create game” open and both phones are on the same Wi-Fi network. Guest networks often block phones from seeing each other.',
+  'Адреса має виглядати так: 192.168.1.23':'The address should look like this: 192.168.1.23', 'Підключаюсь…':'Connecting…',
+  'Не вдалося підключитися. Перевір мережу й спробуй ще.':"Couldn't connect. Check the network and try again.",
+  'Не вдалося підключитися. Телефони поруч, Bluetooth увімкнено?':"Couldn't connect. Are the phones close and is Bluetooth on?",
+  'Не вдалося підключитися. Обидва телефони в одній Wi-Fi мережі?':"Couldn't connect. Are both phones on the same Wi-Fi?",
+  'Суперник відключився. Чекаю, поки повернеться…':'Your opponent disconnected. Waiting for them to come back…',
+  "Зв'язок з суперником втрачено.":'Connection to your opponent was lost.', 'Підключитися знову':'Reconnect',
+  'Шукаю гру друга поруч…':"Looking for your friend's game nearby…", "Зв'язок відновлено":'Connection restored',
+  "Немає зв'язку з суперником":'No connection to your opponent', "Немає зв'язку":'No connection',
+  'Не вдалося створити гру. Перезапусти застосунок і спробуй ще.':"Couldn't create the game. Restart the app and try again.",
+  'Не вдалося почати пошук. Спробуй ще раз.':"Couldn't start searching. Try again.",
+  'Не вдалося створити гру. Перевір, що увімкнено Bluetooth і геолокацію.':"Couldn't create the game. Check that Bluetooth and location are on.",
+  'Не вдалося почати пошук. Перевір, що увімкнено Bluetooth і геолокацію.':"Couldn't start searching. Check that Bluetooth and location are on.",
+  // спільне
+  'Нічия?':'Draw?', 'Погодитись':'Accept', 'Грати далі':'Keep playing', 'Суперник хоче грати далі':'Your opponent wants to keep playing',
+  'Скасувати хід?':'Undo the move?', 'Дозволити':'Allow', 'Ні':'No', 'Хід скасовано':'Move undone',
+  'Суперник не дозволив скасувати хід':"Your opponent didn't allow the undo", 'Грати!':'Play!', 'Ні, дякую':'No, thanks',
+  'Суперник не хоче грати ще':"Your opponent doesn't want to play again", 'Суперник вийшов':'Opponent left', 'В меню':'Menu',
+  'Перемога! 🏆':'Victory! 🏆', 'Перемога!':'Victory!', 'Поразка':'Defeat', 'Цього разу поразка':'You lost this time',
+  "Комп'ютер":'Computer', "Комп'ютер переміг":'The computer won', 'Ти':'You', 'Результат':'Result', 'Чекаю…':'Waiting…',
+  'Здатися?':'Resign?', 'Здатися':'Resign', 'Так, здаюся':'Yes, I give up', 'Ні, граю далі':'No, keep playing',
+  'Вийти з партії?':'Leave the game?', 'Суперник побачить, що ти вийшов.':'Your opponent will see that you left.',
+  'Поточна партія закінчиться.':'The current game will end.', 'Вийти':'Leave', 'Залишитися':'Stay',
+  // шахи
+  'Нова партія. Ти граєш білими':'New game. You play White', 'Нова партія. Ти граєш чорними':'New game. You play Black',
+  'Нова партія':'New game', 'На кого замінити пішака?':'Promote the pawn to?', 'Нічия 🤝':'Draw 🤝',
+  'Перемогли білі 🏆':'White wins 🏆', 'Перемогли чорні 🏆':'Black wins 🏆', 'Мат.':'Checkmate.', 'Партію здано.':'The game was resigned.',
+  'Білі здали партію.':'White resigned.', 'Чорні здали партію.':'Black resigned.',
+  'Пат: королю нікуди ходити, але шаху немає.':'Stalemate: the king has no moves but is not in check.',
+  'Та сама позиція повторилася тричі.':'The same position occurred three times.',
+  '50 ходів поспіль без взять і без ходів пішаками.':'50 moves in a row without a capture or a pawn move.',
+  'Ні в кого не лишилося фігур, щоб поставити мат.':'Neither side has enough pieces to checkmate.',
+  'Гравці домовилися про нічию.':'The players agreed to a draw.', 'Ще партію':'Rematch', 'Подивитися дошку':'View board',
+  'Чекаю на відповідь суперника…':"Waiting for your opponent's reply…", 'Питаю суперника…':'Asking your opponent…',
+  'Закінчити партію внічию?':'End the game in a draw?', 'Так, нічия':'Yes, draw', 'Пропозицію нічиєї надіслано':'Draw offer sent',
+  'Білі здають партію?':'Does White resign?', 'Чорні здають партію?':'Does Black resign?', 'Точно здати партію?':'Resign this game?',
+  'Білі':'White', 'Чорні':'Black', 'Хід білих':"White's move", 'Хід чорних':"Black's move", 'Твій хід':'Your move',
+  'Хід назад':'Undo', 'Нічия':'Draw', 'Повернути':'Flip',
+  // морський бій
+  'Тут не можна: кораблі не можуть торкатися навіть кутами':"Can't place it here: ships can't touch, not even at the corners",
+  'Мимо':'Miss', 'Влучання! Стріляй ще':'Hit! Shoot again', 'Корабель потоплено! Стріляй ще':'Ship sunk! Shoot again',
+  "Усі кораблі комп'ютера потоплено.":"All the computer's ships are sunk.", 'Усі кораблі суперника потоплено.':"All your opponent's ships are sunk.",
+  'Усі твої кораблі потоплено.':'All your ships are sunk.', 'Подивитися поле':'View board',
+  'Новий бій. Ти стріляєш першим':'New battle. You shoot first', 'Новий бій':'New battle', 'Починаємо новий бій':'Starting a new battle',
+  'Розстав свої кораблі':'Place your ships', 'Вибери корабель і торкнись клітинки. Торкнись корабля на полі, щоб прибрати.':'Pick a ship and tap a cell. Tap a placed ship to remove it.',
+  '↕ Вертикально':'↕ Vertical', '↔ Горизонтально':'↔ Horizontal', 'Випадково':'Random', 'Очистити':'Clear', 'До бою!':'Battle!',
+  'Постріл…':'Firing…', 'Твій постріл! Обери клітинку':'Your shot! Pick a cell', "Стріляє комп'ютер…":'The computer is shooting…',
+  'Мій флот':'My fleet', 'Точно здати бій?':'Give up this battle?',
+  // танчики
+  'Приготуйся!':'Get ready!', 'Влучання!':'Hit!',
+  // бродилка
+  'Перші кроки':'First Steps', 'Доведіть обох героїв до прапорців 🏁':'Get both heroes to the flags 🏁',
+  'Ключ від дверей':'The Door Key', 'Ключ відчиняє двері 🚪. Ключі спільні!':'A key opens a door 🚪. Keys are shared!',
+  'Чарівна кнопка':'The Magic Button', 'Стань на кнопку — ґрати відчиняться для друга':'Stand on the button to open the gate for your friend',
+  'Кольорові стежки':'Colored Paths', 'По жовтій стежці ходить лише жовтий, по синій — лише синій':'Only yellow can walk the yellow path, only blue the blue one',
+  'Дві кнопки':'Two Buttons', 'Допомагайте одне одному по черзі':'Take turns helping each other',
+  'Скарбниця':'The Treasury', 'Зберіть ключі, щоб відчинити всі двері':'Collect the keys to open all the doors',
+  'Міст через річку':'Bridge over the River', 'Жовтий тримає кнопку — синій проходить, і навпаки':'Yellow holds the button while blue passes, and vice versa',
+  'Лабіринт':'The Labyrinth', 'Тут легко заблукати. Тримайтеся разом!':"It's easy to get lost here. Stick together!",
+  'Хрест':'The Cross', 'Кожна кнопка відчиняє ґрати десь далеко':'Each button opens a gate somewhere far away',
+  'Великий скарб':'The Great Treasure', 'Останнє випробування! Ключі, кнопки й кольори разом':'The final challenge! Keys, buttons and colors together',
+  'Рівень спочатку':'Level restarted', 'Сюди може лише жовтий герой':'Only the yellow hero can go here',
+  'Сюди може лише синій герой':'Only the blue hero can go here', 'Ґрати зачинені. Потрібно стати на кнопку':'The gate is closed. Someone has to stand on the button',
+  'Двері зачинені. Знайдіть ключ 🔑':'The door is locked. Find a key 🔑', 'Тепер ходить синій герой':'Now moving: the blue hero',
+  'Тепер ходить жовтий герой':'Now moving: the yellow hero', 'Усі лабіринти пройдено! 🏆':'All mazes completed! 🏆',
+  'Пройти знову':'Play again', 'Герой ⇄':'Hero ⇄', '🔄 Заново':'🔄 Restart', 'Скарб знайдено! 🏆':'Treasure found! 🏆',
+  'Рівень пройдено! 🎉':'Level complete! 🎉',
+  // гонки
+  'Ще гонка':'Race again', 'Фініш!':'Finish!', 'Старт!':'Go!',
+  // аерохокей
+  "Цього разу виграв комп'ютер":'The computer won this time', '🟡 Жовті перемогли!':'🟡 Yellow wins!',
+  '🔵 Сині перемогли!':'🔵 Blue wins!', 'ГОЛ!':'GOAL!', 'Готові?':'Ready?'
+};
+// Фрази зі змінними частинами: $1, $2… теж перекладаються
+const I18N_RX = [
+  [/^(.+): з другом поруч$/, '$1: with a friend nearby'], [/^(.+): по Wi-Fi$/, '$1: over Wi-Fi'],
+  [/^(.+) повернувся в гру$/, '$1 is back in the game'],
+  [/^(.+) пропонує закінчити партію внічию\.$/, '$1 offers a draw.'],
+  [/^(.+) просить скасувати свій останній хід\.$/, '$1 asks to undo their last move.'],
+  [/^(.+?) хоче зіграти ще\.\s*(.*)$/, '$1 wants to play again. $2'],
+  [/^(.+) вийшов з гри\.$/, '$1 left the game.'], [/^(.+) здає партію\.$/, '$1 resigns.'], [/^(.+) здається\.$/, '$1 gives up.'],
+  [/^(.+) \(ти\)$/, '$1 (you)'], [/^Шах! (.+)$/, 'Check! $1'], [/^Ходить (.+)$/, "$1's move"],
+  [/^(.+) промахнувся$/, '$1 missed'], [/^(.+) влучив у твій корабель$/, '$1 hit your ship'],
+  [/^(.+) потопив твій корабель$/, '$1 sank your ship'], [/^Новий бій\. Першим стріляє (.+)$/, 'New battle. $1 shoots first'],
+  [/^(.+) вже розставив кораблі$/, '$1 has placed their ships'], [/^(.+) вже готовий до бою$/, '$1 is ready for battle'],
+  [/^Чекаю, поки (.+) розставить кораблі…$/, 'Waiting for $1 to place their ships…'], [/^Стріляє (.+)…$/, '$1 is shooting…'],
+  [/^Флот: (.+)$/, 'Fleet: $1'], [/^кораблів залишилось: (\d+)$/, 'ships left: $1'], [/^(\d+) з (\d+)$/, '$1 of $2'],
+  [/^Переміг (.+)$/, '$1 won'], [/^Рахунок (\d+) : (\d+)$/, 'Score $1 : $2'], [/^до (\d+)$/, 'to $1'],
+  [/^(\d+)\. (.+)$/, '$1. $2'], [/^Ви разом пройшли (\d+) рівнів\. Справжня команда!$/, 'Together you completed $1 levels. A true team!'],
+  [/^Першим фінішував (.+)$/, '$1 finished first'],
+  [/^Траса «(.+)», (\d+) кола\. Час: (\d+) с$/, 'Track “$1”, $2 laps. Time: $3 s'],
+  [/^(.+) · коло (\d+\/\d+)$/, '$1 · lap $2'], [/^(.+) · 🏁$/, '$1 · 🏁'], [/^До (\d+) голів$/, 'First to $1']
+];
+const I18N = {};
+const i18nNorm = s => s.replace(/[’ʼ]/g, "'").replace(/\s+/g, ' ').trim();
+for (const k in I18N_SRC) I18N[i18nNorm(k)] = I18N_SRC[k];
+const I18N_CYR = /[А-Яа-яІіЇїЄєҐґ]/;
+function T(s){
+  if (LANG === 'uk' || s == null) return s;
+  const str = String(s), key = i18nNorm(str);
+  if (!key || !I18N_CYR.test(key)) return s;
+  let out = I18N[key];
+  if (out === undefined) for (const [rx, rep] of I18N_RX) {
+    const m = key.match(rx);
+    if (m) { out = rep.replace(/\$(\d)/g, (_, i) => T(m[+i] || '')); break; }
+  }
+  if (out === undefined) { (T.miss || (T.miss = new Set())).add(key); return s; }
+  return str.match(/^\s*/)[0] + out + str.match(/\s*$/)[0];
+}
+function trNode(n){
+  if (n.nodeType === 3) {
+    const pe = n.parentNode; if (!pe || pe.nodeName === 'SCRIPT' || pe.nodeName === 'STYLE') return;
+    const v = n.nodeValue; if (v.length > 600) return;
+    const t = T(v); if (t !== v) n.nodeValue = t; return;
+  }
+  if (n.nodeType !== 1 || n.tagName === 'SCRIPT' || n.tagName === 'STYLE') return;
+  for (const a of ['placeholder', 'aria-label', 'title']) if (n.hasAttribute(a)) {
+    const v = n.getAttribute(a), t = T(v); if (t !== v) n.setAttribute(a, t);
+  }
+  for (let c = n.firstChild; c; c = c.nextSibling) trNode(c);
+}
+(function(){
+  const lb = document.getElementById('langBtn');
+  if (lb) {
+    lb.textContent = LANG === 'uk' ? '🌐 English' : '🌐 Українська';
+    lb.onclick = () => { try { localStorage.setItem('igry_lang', LANG === 'uk' ? 'en' : 'uk'); } catch(e) {} location.reload(); };
+  }
+  if (LANG === 'uk') return;
+  document.documentElement.lang = 'en';
+  const en = document.querySelector('#gameSeg [data-g="en"]'); if (en) en.remove();   // гра для вивчення англійської — лише для українців
+  document.title = T(document.title);
+  trNode(document.body);
+  new MutationObserver(ms => {
+    for (const m of ms) { if (m.type === 'characterData') trNode(m.target); else m.addedNodes.forEach(trNode); }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+})();
+</script>
 <script>
 // ---------- Шаховий рушій: правила, легальні ходи, кінець партії ----------
 const FILES = 'abcdefgh';
@@ -683,13 +885,13 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const cleanName = s => String(s || '').replace(/[|\n\r]/g, ' ').trim().slice(0, 16);
 
 const S = {
-  mode: null, role: null, myColor: 'w', myName: 'Гравець', oppName: 'Суперник',
+  mode: null, role: null, myColor: 'w', myName: T('Гравець'), oppName: T('Суперник'),
   game: null, legal: [], selected: null, flip: false, over: null,
   connected: false, lastRecv: 0, lastHostIp: null, hostChoice: 'w',
   rematchAsked: false, screen: 'menu', modalKind: null,
   transport: 'wifi', lastHostName: null, autoJoin: null, gameType: 'chess'
 };
-const inGame = () => ['game', 'bsgame', 'engame', 'tkgame', 'rcgame', 'mzgame'].includes(S.screen);
+const inGame = () => ['game', 'bsgame', 'engame', 'tkgame', 'rcgame', 'mzgame', 'ahgame'].includes(S.screen);
 
 // ---------- Екрани ----------
 function show(id){
@@ -716,7 +918,7 @@ function ask(kind, title, text, buttons){
 try { S.myName = localStorage.getItem('shakhy_name') || ''; } catch(e) {}
 $('name').value = S.myName;
 function saveName(){
-  S.myName = cleanName($('name').value) || 'Гравець';
+  S.myName = cleanName($('name').value) || T('Гравець');
   $('name').value = S.myName;
   try { localStorage.setItem('shakhy_name', S.myName); } catch(e) {}
 }
@@ -730,6 +932,7 @@ $('bLocal').onclick = () => {
   if (S.gameType === 'tk') { TK.startLocal(); return; }
   if (S.gameType === 'rc') { RC.startLocal(); return; }
   if (S.gameType === 'mz') { MZ.startLocal(); return; }
+  if (S.gameType === 'ah') { AH.start(false); return; }
   newGame(); enterGame();
 };
 const GAMES = {
@@ -750,9 +953,13 @@ const GAMES = {
            again:'Почнемо з першого рівня.' },
   tk:    { ic:'🎯', name:'Танчики', screen:'tkgame', local:['🤖', 'Грати з комп’ютером', 'Танк проти бота'],
            opt:{ label:'Бій до', list:[['3','3 перемог'], ['5','5 перемог'], ['10','10 перемог']] },
-           again:'Рахунок почнеться з нуля.' }
+           again:'Рахунок почнеться з нуля.' },
+  ah:    { ic:'🏒', name:'Аерохокей', screen:'ahgame', localOnly:true, bot:true,
+           local:['📱', 'Грати вдвох на цьому телефоні', 'Екран навпіл, у кожного своя бита'],
+           opt:{ label:'', list:[] }, again:'Рахунок почнеться з нуля.' }
 };
 function setGameType(g){
+  if (g === 'en' && LANG !== 'uk') g = 'chess';
   S.gameType = GAMES[g] ? g : 'chess';
   try { localStorage.setItem('igry_game', S.gameType); } catch(e) {}
   const G = GAMES[S.gameType];
@@ -762,10 +969,14 @@ function setGameType(g){
   $('localIc').textContent = G.local[0];
   $('localTitle').textContent = G.local[1];
   $('localSub').textContent = G.local[2];
+  $('bNear').style.display = $('bWifi').style.display = G.localOnly ? 'none' : '';
+  $('bBot').style.display = G.bot ? '' : 'none';
+  $('bLocal').classList.toggle('primary', !!G.localOnly);
 }
 $('gameSeg').onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) setGameType(b.dataset.g); };
 try { setGameType(localStorage.getItem('igry_game') || 'chess'); } catch(e) {}
 $('bNear').onclick = () => openPick('nearby');
+$('bBot').onclick = () => { saveName(); Object.assign(S, { mode:'local', role:null, flip:false, connected:false }); AH.start(true); };
 $('bWifi').onclick = () => openPick('wifi');
 $('pickBack').onclick = () => show('menu');
 function openPick(t){
@@ -881,7 +1092,7 @@ function toMenu(){
   const token = ++leaveToken;
   setTimeout(() => { if (token === leaveToken && S.mode === null) NET.disconnect(); }, 300);
   Object.assign(S, { mode:null, role:null, connected:false, game:null, over:null, selected:null });
-  B = null; clearTimeout(aiTimer); EN.stop(); TK.stop(); RC.stop(); MZ.stop();
+  B = null; clearTimeout(aiTimer); EN.stop(); TK.stop(); RC.stop(); MZ.stop(); AH.stop();
   closeModal(); $('banner').classList.remove('on');
   show('menu');
 }
@@ -978,7 +1189,7 @@ function onMessage(line){
   switch (m.t) {
     case 'ping': send({ t:'pong' }); break;
     case 'hello':
-      S.oppName = cleanName(m.name) || 'Суперник';
+      S.oppName = cleanName(m.name) || T('Суперник');
       if (S.role === 'host') {
         if (hasGame() && inGame()) { if (S.gameType === 'tk') TK.peerBack(); if (S.gameType === 'rc') RC.peerBack(); if (S.gameType === 'mz') MZ.peerBack(); sendState(); toast(`${S.oppName} повернувся в гру`); render(); }
         else startNetGame();
@@ -1117,6 +1328,7 @@ function newRound(){
   if (S.gameType === 'tk') { TK.newRound(); return; }
   if (S.gameType === 'rc') { RC.newRound(); return; }
   if (S.gameType === 'mz') { MZ.newRound(); return; }
+  if (S.gameType === 'ah') { AH.newRound(); return; }
   if (S.mode === 'net') S.myColor = S.myColor === 'w' ? 'b' : 'w';
   newGame(); closeModal(); render();
   toast(S.mode === 'net' ? (S.myColor === 'w' ? 'Нова партія. Ти граєш білими' : 'Нова партія. Ти граєш чорними') : 'Нова партія');
@@ -1242,8 +1454,8 @@ function act(id){
   }
 }
 function confirmLeave(){
-  if (['en', 'tk', 'rc', 'mz'].includes(S.gameType)) {
-    if ({ en: EN, tk: TK, rc: RC, mz: MZ }[S.gameType].leaveFree()) return toMenu();
+  if (['en', 'tk', 'rc', 'mz', 'ah'].includes(S.gameType)) {
+    if ({ en: EN, tk: TK, rc: RC, mz: MZ, ah: AH }[S.gameType].leaveFree()) return toMenu();
   } else if (S.gameType === 'bs') {
     if (!B || B.over || (!B.ready && !B.outgoing.length)) return toMenu();
   } else if (S.over || !S.game || !S.game.uci.length) return toMenu();
@@ -1259,6 +1471,7 @@ function render(){
   else if (S.gameType === 'tk') TK.render();
   else if (S.gameType === 'rc') RC.render();
   else if (S.gameType === 'mz') MZ.render();
+  else if (S.gameType === 'ah') AH.render();
   else renderChess();
 }
 function renderChess(){
@@ -1320,7 +1533,7 @@ function renderChess(){
   if (S.over) a = [['again', S.rematchAsked ? '⏳' : '🔁', S.rematchAsked ? 'Чекаю…' : 'Ще партію', true], ['result', '🏁', 'Результат'], ['menu', '☰', 'Меню']];
   else {
     const canUndo = S.mode === 'local' ? g.uci.length > 0 : (S.connected && g.uci.length > 0 && g.turn !== S.myColor);
-    a = [['undo', '↶', 'Скасувати', false, !canUndo], ['draw', '🤝', 'Нічия', false, S.mode === 'net' && !S.connected],
+    a = [['undo', '↶', 'Хід назад', false, !canUndo], ['draw', '🤝', 'Нічия', false, S.mode === 'net' && !S.connected],
          ['resign', '🏳️', 'Здатися'], ['menu', '☰', 'Меню']];
     if (S.mode === 'local') a.splice(3, 0, ['flip', '⇅', 'Повернути']);
   }
@@ -1348,7 +1561,7 @@ function capturedBy(g){
 // Класичні правила: поле 10×10; кораблі 1×4, 2×3, 3×2, 4×1; кораблі не торкаються навіть кутами;
 // влучив — стріляєш ще; навколо потопленого корабля клітинки позначаються автоматично.
 const FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1];
-const LETTERS = 'АБВГДЕЖЗИК';
+const LETTERS = LANG === 'uk' ? 'АБВГДЕЖЗИК' : 'ABCDEFGHIJ';
 let B = null, aiTimer = null;
 
 function around(i){
@@ -2599,7 +2812,7 @@ const TK = {
     if (msg) {
       ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, W / 2 - cs * .9, W, cs * 1.8);
       ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(cs * .9)}px system-ui, sans-serif`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(msg, W / 2, W / 2);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(T(msg), W / 2, W / 2);
     }
   },
   drawTank(ctx, x, y, d, cs, col, mine){
@@ -3006,7 +3219,7 @@ const MZ = {
     if (msg) {
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, c.height / 2 - cs * .8, c.width, cs * 1.6);
       ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(cs * .7)}px system-ui, sans-serif`;
-      ctx.fillText(msg, c.width / 2, c.height / 2);
+      ctx.fillText(T(msg), c.width / 2, c.height / 2);
     }
   }
 };
@@ -3275,7 +3488,7 @@ const RC = {
     if (msg) {
       ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, c.height / 2 - 9 * k, c.width, 18 * k);
       ctx.fillStyle = '#fff'; ctx.font = `bold ${Math.round(11 * k)}px system-ui, sans-serif`;
-      ctx.fillText(msg, c.width / 2, c.height / 2);
+      ctx.fillText(T(msg), c.width / 2, c.height / 2);
     }
   },
   drawCar(ctx, x, y, a, k, col, mine, boost){
@@ -3324,6 +3537,244 @@ const RC = {
     else if (b.dataset.mz === 'restart') MZ.restart();
     else if (b.dataset.mz === 'menu') confirmLeave();
   });
+})();
+
+// ---------- Аерохокей (на одному телефоні: вдвох або з ботом) ----------
+const AH_W = 100, AH_H = 170, AH_PR = 4.6, AH_MR = 8, AH_GOAL = 36, AH_WIN = 7, AH_MAXV = 250, AH_DT = 1 / 240;
+const AH_COL = ['#e6b450', '#5aa9e6'], AH_DARK = ['#9a6f1f', '#2d6c9c'];
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect)
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+    this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); };
+const AH = {
+  st: null, raf: null, last: 0, acc: 0, ptr: {}, k: 1, ox: 0, oy: 0, dpr: 1,
+  active(){ return !!this.st; },
+  stop(){ cancelAnimationFrame(this.raf); this.raf = null; this.st = null; this.ptr = {}; },
+  leaveFree(){ return !this.st || !!this.st.over || this.st.sc[0] + this.st.sc[1] === 0; },
+  fresh(bot){
+    return { bot, sc: [0, 0], over: null, ph: 'ready', phT: 1.6, serve: Math.random() < .5 ? 0 : 1, flash: -1,
+      puck: { x: 50, y: AH_H / 2, vx: 0, vy: 0 }, trail: [],
+      m: [{ x: 50, y: AH_H - 22, vx: 0, vy: 0, tx: 50, ty: AH_H - 22, spd: 900 },
+          { x: 50, y: 22, vx: 0, vy: 0, tx: 50, ty: 22, spd: bot ? 165 : 900 }],
+      botT: 0, idle: 0 };
+  },
+  start(bot){
+    this.stop(); S.mode = 'local'; this.st = this.fresh(bot); this.placePuck();
+    enterGame(); this.resize();
+    this.last = performance.now(); this.acc = 0;
+    const frame = t => { this.frame(t); if (this.st) this.raf = requestAnimationFrame(frame); };
+    this.raf = requestAnimationFrame(frame);
+  },
+  newRound(){ const bot = this.st ? this.st.bot : false; closeModal(); S.rematchAsked = false; this.start(bot); },
+  placePuck(){
+    const s = this.st, p = s.puck;
+    p.x = 50; p.y = AH_H / 2 + (s.serve === 0 ? 20 : -20); p.vx = p.vy = 0; s.trail = []; s.idle = 0;
+  },
+
+  // ---------- Керування пальцями ----------
+  toTable(e){
+    const r = $('ahCanvas').getBoundingClientRect();
+    return { x: (e.clientX - r.left - this.ox) / this.k, y: (e.clientY - r.top - this.oy) / this.k };
+  },
+  touch(e, down){
+    const s = this.st; if (!s || s.over) return;
+    const q = this.toTable(e);
+    let who = this.ptr[e.pointerId];
+    if (down) { who = q.y >= AH_H / 2 ? 0 : 1; if (s.bot && who === 1) return; this.ptr[e.pointerId] = who; }
+    if (who === undefined) return;
+    s.m[who].tx = q.x; s.m[who].ty = q.y;
+  },
+  release(e){ delete this.ptr[e.pointerId]; },
+
+  // ---------- Бот (верхня бита) ----------
+  bot(dt){
+    const s = this.st, p = s.puck, m = s.m[1];
+    s.botT -= dt; if (s.botT > 0) return;
+    s.botT = 0.07 + Math.random() * 0.05;              // «реакція» бота
+    let tx, ty;
+    const near = Math.hypot(p.x - m.x, p.y - m.y) < AH_PR + AH_MR + 1.5;
+    const atWall = p.x < AH_PR + 2 || p.x > AH_W - AH_PR - 2 || p.y < AH_PR + 2;
+    if (s.ph === 'play' && near && atWall) {                     // не притискати шайбу до борту
+      const d = Math.hypot(m.x - p.x, m.y - p.y) || 1;
+      m.tx = m.x + (m.x - p.x) / d * 14; m.ty = m.y + (m.y - p.y) / d * 14; s.botT = 0.25; return;
+    }
+    if (s.ph === 'play' && p.y < AH_PR + AH_MR + 3 && p.y < AH_H / 2) {
+      tx = p.x + (p.x < 50 ? 4 : -4); ty = p.y;                   // шайба під своїм бортом: вибити її
+    } else if (s.ph === 'play' && p.y < AH_H / 2 + 6 && !(p.vy > 120)) {
+      // атака: стати «за» шайбою і вдарити в бік воріт суперника
+      let ax = p.x - 50, ay = p.y - AH_H; const L = Math.hypot(ax, ay) || 1; ax /= L; ay /= L;
+      if (m.y < p.y - 3) { tx = p.x - ax * 10; ty = p.y - ay * 10; }        // удар крізь шайбу
+      else { const side = m.x < p.x ? -1 : 1;                                  // обійти шайбу збоку
+        tx = p.x + side * (AH_PR + AH_MR + 5); ty = p.y - (AH_PR + AH_MR + 2); }
+    } else {
+      // захист: тримати лінію воріт, стежачи за шайбою
+      const lead = p.vy < 0 ? Math.min(0.6, (p.y - 22) / (-p.vy || 1)) : 0;
+      tx = 50 + (p.x + p.vx * lead - 50) * 0.6; ty = 22;
+    }
+    m.tx = tx + (Math.random() - .5) * 4; m.ty = ty;
+  },
+
+  // ---------- Фізика ----------
+  clampM(k, m){
+    const lo = k === 0 ? AH_H / 2 + AH_MR : AH_MR, hi = k === 0 ? AH_H - AH_MR : AH_H / 2 - AH_MR;
+    m.x = Math.max(AH_MR, Math.min(AH_W - AH_MR, m.x)); m.y = Math.max(lo, Math.min(hi, m.y));
+  },
+  step(dt){
+    const s = this.st; if (!s || s.over) return;
+    if (s.ph !== 'play') {
+      s.phT -= dt;
+      if (s.phT <= 0) { if (s.ph === 'goal') { this.placePuck(); s.ph = 'ready'; s.phT = 1.1; s.flash = -1; } else s.ph = 'play'; }
+    }
+    if (s.bot) this.bot(dt);
+    for (let k = 0; k < 2; k++) {                       // бити тягнуться за пальцем
+      const m = s.m[k], ox = m.x, oy = m.y;
+      const tx = Math.max(AH_MR, Math.min(AH_W - AH_MR, m.tx));
+      const ty = Math.max(k === 0 ? AH_H / 2 + AH_MR : AH_MR, Math.min(k === 0 ? AH_H - AH_MR : AH_H / 2 - AH_MR, m.ty));
+      let dx = tx - m.x, dy = ty - m.y; const d = Math.hypot(dx, dy), lim = m.spd * dt;
+      if (d > lim) { dx *= lim / d; dy *= lim / d; }
+      m.x += dx; m.y += dy; this.clampM(k, m);
+      m.vx = (m.x - ox) / dt; m.vy = (m.y - oy) / dt;
+    }
+    if (s.ph !== 'play') return;
+    const p = s.puck;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    const fr = Math.pow(0.82, dt); p.vx *= fr; p.vy *= fr;
+    for (let k = 0; k < 2; k++) this.hitMallet(s.m[k], p);
+    this.walls(p);
+    for (let k = 0; k < 2; k++) {                       // шайба притиснута до борту: відсунути биту
+      const m = s.m[k], dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy), R = AH_PR + AH_MR;
+      if (d < R - 0.01 && d > 0) { m.x = p.x - dx / d * R; m.y = p.y - dy / d * R; this.clampM(k, m); m.tx = m.x; m.ty = m.y; }
+    }
+    const v = Math.hypot(p.vx, p.vy);
+    if (v > AH_MAXV) { p.vx *= AH_MAXV / v; p.vy *= AH_MAXV / v; }
+    s.idle = v < 4 ? s.idle + dt : 0;
+    if (s.idle > 6 && Math.abs(p.y - AH_H / 2) < AH_PR + 1) {   // шайба завмерла на центральній лінії
+      p.vy = (Math.random() < .5 ? 1 : -1) * 30; s.idle = 0;
+    }
+    if (p.y < -1 || p.y > AH_H + 1) this.goal(p.y < 0 ? 0 : 1);
+  },
+  hitMallet(m, p){
+    const dx = p.x - m.x, dy = p.y - m.y, d = Math.hypot(dx, dy), R = AH_PR + AH_MR;
+    if (d >= R || d === 0) return;
+    const nx = dx / d, ny = dy / d;
+    p.x = m.x + nx * R; p.y = m.y + ny * R;
+    const vr = (p.vx - m.vx) * nx + (p.vy - m.vy) * ny;
+    if (vr < 0) {
+      p.vx -= 1.85 * vr * nx; p.vy -= 1.85 * vr * ny;
+      if (-vr > 60) NET.vibrate(15);
+    }
+  },
+  walls(p){
+    const g = AH_GOAL / 2, inMouth = Math.abs(p.x - 50) < g;
+    if (p.x < AH_PR) { p.x = AH_PR; p.vx = Math.abs(p.vx) * 0.88; }
+    if (p.x > AH_W - AH_PR) { p.x = AH_W - AH_PR; p.vx = -Math.abs(p.vx) * 0.88; }
+    if (!inMouth) {
+      if (p.y < AH_PR) { p.y = AH_PR; p.vy = Math.abs(p.vy) * 0.88; }
+      if (p.y > AH_H - AH_PR) { p.y = AH_H - AH_PR; p.vy = -Math.abs(p.vy) * 0.88; }
+    }
+    for (const py of [0, AH_H]) for (const px of [50 - g, 50 + g]) {   // штанги
+      const dx = p.x - px, dy = p.y - py, d = Math.hypot(dx, dy);
+      if (d < AH_PR && d > 0) {
+        const nx = dx / d, ny = dy / d; p.x = px + nx * AH_PR; p.y = py + ny * AH_PR;
+        const vn = p.vx * nx + p.vy * ny; if (vn < 0) { p.vx -= 1.8 * vn * nx; p.vy -= 1.8 * vn * ny; }
+      }
+    }
+  },
+  goal(k){                                              // k забив
+    const s = this.st;
+    s.sc[k]++; s.flash = k; s.serve = 1 - k; s.ph = 'goal'; s.phT = 1.4;
+    s.puck.vx = s.puck.vy = 0; s.puck.y = k === 0 ? -50 : AH_H + 50;
+    NET.vibrate(k === 0 || !s.bot ? 120 : 260);
+    if (s.sc[k] >= AH_WIN) {
+      s.over = { w: k };
+      setTimeout(() => {
+        if (!this.st || !this.st.over) return;
+        const t = s.bot ? (k === 0 ? 'Перемога! 🏆' : 'Цього разу виграв комп’ютер') : (k === 0 ? '🟡 Жовті перемогли!' : '🔵 Сині перемогли!');
+        ask('over', t, `Рахунок ${s.sc[0]} : ${s.sc[1]}`, [
+          { label: 'Ще раз', cls: 'gold', fn: () => this.newRound() }, { label: 'Меню', fn: toMenu }]);
+      }, 700);
+    }
+  },
+  frame(t){
+    if (!this.st) return;
+    let dt = (t - this.last) / 1000; this.last = t;
+    if (!(dt > 0)) dt = 0; dt = Math.min(dt, 0.05);
+    this.acc += dt;
+    while (this.acc >= AH_DT) { this.step(AH_DT); this.acc -= AH_DT; }
+    const s = this.st; if (!s) return;
+    if (s.ph === 'play') { s.trail.push({ x: s.puck.x, y: s.puck.y }); if (s.trail.length > 8) s.trail.shift(); }
+    this.draw();
+  },
+
+  // ---------- Малювання ----------
+  resize(){
+    const c = $('ahCanvas'), sec = $('ahgame');
+    const w = sec.clientWidth, h = sec.clientHeight; if (!w || !h) return;
+    this.dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(w * this.dpr); c.height = Math.round(h * this.dpr);
+    c.style.width = w + 'px'; c.style.height = h + 'px';
+    const pad = 10; this.k = Math.min((w - 2 * pad) / AH_W, (h - 2 * pad) / AH_H);
+    this.ox = (w - AH_W * this.k) / 2; this.oy = (h - AH_H * this.k) / 2;
+  },
+  render(){ this.resize(); this.draw(); },
+  text(ctx, t, x, y, size, color, flip){
+    ctx.save(); ctx.translate(x, y); if (flip) ctx.rotate(Math.PI);
+    ctx.font = `800 ${size}px system-ui, Roboto, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = color; ctx.fillText(T(t), 0, 0); ctx.restore();
+  },
+  draw(){
+    const s = this.st, c = $('ahCanvas'); if (!s || !c.width) return;
+    const ctx = c.getContext('2d'), k = this.k, g = AH_GOAL / 2;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height);
+    ctx.setTransform(this.dpr * k, 0, 0, this.dpr * k, this.dpr * this.ox, this.dpr * this.oy);
+    // борт і лід
+    ctx.fillStyle = '#16302a'; ctx.beginPath(); ctx.roundRect(-4, -4, AH_W + 8, AH_H + 8, 9); ctx.fill();
+    ctx.fillStyle = '#eaf3f6'; ctx.beginPath(); ctx.roundRect(0, 0, AH_W, AH_H, 6); ctx.fill();
+    // ворота
+    for (const [y, col] of [[0, AH_COL[1]], [AH_H, AH_COL[0]]]) {
+      ctx.fillStyle = '#0d1c18'; ctx.fillRect(50 - g, y ? y - 0.5 : -4, AH_GOAL, 4.5);
+      ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.globalAlpha = .55;
+      ctx.beginPath(); ctx.arc(50, y, g, y ? Math.PI : 0, y ? 2 * Math.PI : Math.PI); ctx.stroke(); ctx.globalAlpha = 1;
+    }
+    // розмітка
+    ctx.strokeStyle = 'rgba(200,70,70,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, AH_H / 2); ctx.lineTo(AH_W, AH_H / 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(50, AH_H / 2, 14, 0, 2 * Math.PI); ctx.stroke();
+    // рахунок на своїй половині кожного гравця
+    this.text(ctx, String(s.sc[0]), 50, AH_H * 0.75, 30, 'rgba(230,180,80,.28)', false);
+    this.text(ctx, String(s.sc[1]), 50, AH_H * 0.25, 30, 'rgba(90,169,230,.28)', true);
+    // шайба зі слідом
+    const p = s.puck;
+    if (s.ph !== 'goal') {
+      s.trail.forEach((q, i) => { ctx.globalAlpha = (i + 1) / s.trail.length * 0.18; ctx.fillStyle = '#1b2a33';
+        ctx.beginPath(); ctx.arc(q.x, q.y, AH_PR * 0.9, 0, 2 * Math.PI); ctx.fill(); });
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(p.x + .8, p.y + 1.2, AH_PR, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = '#1b2a33'; ctx.beginPath(); ctx.arc(p.x, p.y, AH_PR, 0, 2 * Math.PI); ctx.fill();
+      ctx.strokeStyle = '#46606e'; ctx.lineWidth = .8; ctx.beginPath(); ctx.arc(p.x, p.y, AH_PR * .6, 0, 2 * Math.PI); ctx.stroke();
+    }
+    // бити
+    s.m.forEach((m, i) => {
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.arc(m.x + 1, m.y + 1.6, AH_MR, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = AH_DARK[i]; ctx.beginPath(); ctx.arc(m.x, m.y, AH_MR, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = AH_COL[i]; ctx.beginPath(); ctx.arc(m.x, m.y, AH_MR * .78, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = AH_DARK[i]; ctx.beginPath(); ctx.arc(m.x, m.y, AH_MR * .36, 0, 2 * Math.PI); ctx.fill();
+    });
+    // написи для обох гравців
+    const say = (t, col) => { this.text(ctx, t, 50, AH_H * 0.62, 13, col, false); if (!s.bot) this.text(ctx, t, 50, AH_H * 0.38, 13, col, true); };
+    if (s.ph === 'goal' && s.flash >= 0) say('ГОЛ!', AH_DARK[s.flash]);
+    else if (s.ph === 'ready' && !s.over) say(s.sc[0] + s.sc[1] === 0 ? `До ${AH_WIN} голів` : 'Готові?', '#2f5a47');
+    if (s.bot && s.ph !== 'goal') this.text(ctx, '🤖', 8, 8, 7, '#000', false);
+  }
+};
+
+(function(){
+  const c = $('ahCanvas');
+  c.addEventListener('pointerdown', e => { try { c.setPointerCapture(e.pointerId); } catch(x) {} AH.touch(e, true); e.preventDefault(); });
+  c.addEventListener('pointermove', e => { AH.touch(e, false); e.preventDefault(); });
+  c.addEventListener('pointerup', e => AH.release(e)); c.addEventListener('pointercancel', e => AH.release(e));
+  $('ahMenu').onclick = () => confirmLeave();
+  window.addEventListener('resize', () => { if (AH.st) AH.resize(); });
 })();
 
 // ---------- Кнопка «Назад» на телефоні ----------
