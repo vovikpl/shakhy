@@ -8,6 +8,7 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -55,6 +56,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -85,6 +87,8 @@ public class MainActivity extends Activity {
     private volatile int hostGen = 0;
     private volatile DatagramSocket scanSocket;
     private volatile boolean destroyed = false;
+    private TextToSpeech tts;
+    private volatile boolean ttsReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,6 +103,15 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "Android");
         setContentView(web);
         web.loadUrl("file:///android_asset/index.html");
+        try {
+            tts = new TextToSpeech(this, status -> {
+                if (status == TextToSpeech.SUCCESS && tts != null) {
+                    int r = tts.setLanguage(Locale.US);
+                    ttsReady = r != TextToSpeech.LANG_MISSING_DATA && r != TextToSpeech.LANG_NOT_SUPPORTED;
+                    if (ttsReady) tts.setSpeechRate(0.85f);
+                }
+            });
+        } catch (Exception ignored) { }
     }
 
     @Override
@@ -113,6 +126,7 @@ public class MainActivity extends Activity {
         stopScanInternal();
         closeConn();
         nearbyStopAll();
+        if (tts != null) { try { tts.shutdown(); } catch (Exception ignored) { } tts = null; }
         sender.shutdownNow();
         if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
@@ -654,6 +668,13 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String myIps() { return ipList(); }
+
+        @JavascriptInterface
+        public void speak(final String text) {
+            runOnUiThread(() -> {
+                if (tts != null && ttsReady && text != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "word");
+            });
+        }
 
         @JavascriptInterface
         @SuppressWarnings("deprecation")
