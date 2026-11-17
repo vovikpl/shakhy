@@ -16,4 +16,4 @@ search on some phones; the app never reads or stores your location.
 
 **Children:** the app is suitable for children and collects no data from anyone.
 
-**Contact:** if you have questions, write to: YOUR-EMAIL@example.com
+**Contact:** if you have questions, write to: mvovikplgame@gmail.com
